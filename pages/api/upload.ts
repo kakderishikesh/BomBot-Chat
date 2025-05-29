@@ -302,15 +302,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       role: 'user',
       content: `I've uploaded an SBOM file "${fileName}" with ${packages.length} packages. Here's the vulnerability scan results:
 
-**Scan Summary:**
+**Quick Scan Summary:**
 - Total packages scanned: ${packagesToScan.length}
 - Packages with vulnerabilities: ${vulnPackages}
 - Total vulnerabilities found: ${totalVulns}
 
-**Detailed Results:**
+**Scan Data:**
 ${JSON.stringify(scanResults, null, 2)}
 
-Please analyze these results and provide a comprehensive security assessment including vulnerability severity breakdown, affected packages, and recommended remediation actions.`
+Please provide a QUICK summary of the most critical findings with clickable vulnerability links. Keep it brief and actionable. Suggest that I can ask for "executive summary" or "detailed analysis" if I want comprehensive information.`
     });
 
     // Create a run with the assistant
@@ -399,7 +399,23 @@ Please analyze these results and provide a comprehensive security assessment inc
       fileName: fileName,
       packagesScanned: packagesToScan.length,
       totalPackages: packages.length,
-      vulnerabilitiesFound: totalVulns
+      vulnerabilitiesFound: totalVulns,
+      quickSummary: {
+        packagesWithVulns: vulnPackages,
+        totalVulns: totalVulns,
+        topVulnerabilities: vulnerabilityResults
+          .filter(result => result.vulnerabilities.length > 0)
+          .slice(0, 5)
+          .map(result => ({
+            package: result.package.name,
+            version: result.package.version || 'unknown',
+            vulns: result.vulnerabilities.slice(0, 3).map(vuln => ({
+              id: vuln.id,
+              severity: vuln.severity?.[0]?.score || 'Unknown',
+              summary: vuln.summary || 'No summary available'
+            }))
+          }))
+      }
     });
 
   } catch (error) {

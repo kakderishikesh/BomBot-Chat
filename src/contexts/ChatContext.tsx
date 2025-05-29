@@ -6,6 +6,7 @@ interface Message {
   content: string;
   timestamp: Date;
   vulnerabilities?: any[];
+  useMarkdown?: boolean;
 }
 
 interface UploadedFile {

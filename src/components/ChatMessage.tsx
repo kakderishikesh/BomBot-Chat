@@ -3,6 +3,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { User, Shield, AlertTriangle, Info, CheckCircle, Copy, ExternalLink } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import ReactMarkdown from 'react-markdown';
 
 interface Message {
   id: string;
@@ -10,6 +11,7 @@ interface Message {
   content: string;
   timestamp: Date;
   vulnerabilities?: any[];
+  useMarkdown?: boolean; // Flag to control markdown vs HTML rendering
 }
 
 interface ChatMessageProps {
@@ -57,11 +59,13 @@ const ChatMessage = ({ message }: ChatMessageProps) => {
     });
   };
 
+  // Format content for display  
   const formatContent = (content: string) => {
-    // Simple markdown-like formatting
+    // Keep existing formatting for templated responses
     return content
       .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
       .replace(/\*(.*?)\*/g, '<em>$1</em>')
+      .replace(/`(.*?)`/g, '<code class="bg-gray-100 px-1 py-0.5 rounded text-sm">$1</code>')
       .replace(/\n/g, '<br />');
   };
 
@@ -86,10 +90,19 @@ const ChatMessage = ({ message }: ChatMessageProps) => {
           
           {/* Message content */}
           <div className="space-y-2">
-            <div 
-              className="leading-relaxed whitespace-pre-wrap"
-              dangerouslySetInnerHTML={{ __html: formatContent(message.content) }}
-            />
+            {message.useMarkdown ? (
+              <div className="leading-relaxed whitespace-pre-wrap prose prose-sm max-w-none
+                prose-headings:text-gray-900 prose-p:text-gray-900 prose-li:text-gray-900
+                prose-strong:text-gray-900 prose-code:bg-gray-100 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:text-sm
+                prose-pre:bg-gray-100 prose-pre:border prose-pre:border-gray-200">
+                <ReactMarkdown>{message.content}</ReactMarkdown>
+              </div>
+            ) : (
+              <div 
+                className="leading-relaxed whitespace-pre-wrap"
+                dangerouslySetInnerHTML={{ __html: formatContent(message.content) }}
+              />
+            )}
 
             {/* Vulnerability Cards */}
             {message.vulnerabilities && message.vulnerabilities.length > 0 && (

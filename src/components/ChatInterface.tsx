@@ -111,16 +111,55 @@ const ChatInterface = () => {
         setCurrentThreadId(uploadResult.threadId);
       }
 
-      // Add initial message to chat
+      // Show quick templated response first
+      const { quickSummary, vulnerabilitiesFound, packagesScanned } = uploadResult;
+      let responseContent = '';
+      let vulnerabilities = [];
+
+      if (vulnerabilitiesFound > 0) {
+        responseContent = `🔍 **SBOM Analysis Complete for "${file.name}"**\n\n`;
+        responseContent += `📊 **Quick Summary:**\n`;
+        responseContent += `- Packages scanned: ${packagesScanned}\n`;
+        responseContent += `- Packages with vulnerabilities: ${quickSummary.packagesWithVulns}\n`;
+        responseContent += `- Total vulnerabilities: ${quickSummary.totalVulns}\n\n`;
+
+        if (quickSummary.topVulnerabilities.length > 0) {
+          responseContent += `🚨 **Top Vulnerable Packages:**\n`;
+          quickSummary.topVulnerabilities.forEach((pkg, index) => {
+            responseContent += `${index + 1}. **${pkg.package}@${pkg.version}** - ${pkg.vulns.length} issue${pkg.vulns.length > 1 ? 's' : ''}\n`;
+          });
+          responseContent += `\n`;
+
+          // Create vulnerability cards for display
+          vulnerabilities = quickSummary.topVulnerabilities.flatMap(pkg => 
+            pkg.vulns.map(vuln => ({
+              id: vuln.id,
+              severity: vuln.severity,
+              package: pkg.package,
+              version: pkg.version,
+              description: vuln.summary
+            }))
+          );
+        }
+
+        responseContent += `💡 *Ask me "detailed analysis" or "executive summary" for comprehensive remediation guidance*`;
+      } else {
+        responseContent = `✅ **Good news!** SBOM analysis complete for "${file.name}"\n\n`;
+        responseContent += `📊 **Results:**\n`;
+        responseContent += `- Packages scanned: ${packagesScanned}\n`;
+        responseContent += `- Vulnerabilities found: 0\n\n`;
+        responseContent += `🛡️ Your SBOM appears to be secure with no known vulnerabilities detected!\n\n`;
+        responseContent += `💡 *You can ask me questions about specific packages or security recommendations*`;
+      }
+
+      // Add quick templated response
       addMessage({
         type: 'assistant',
-        content: `✅ Successfully uploaded "${file.name}". I'm now analyzing your SBOM file for security vulnerabilities. This may take a moment...`,
+        content: responseContent,
+        vulnerabilities: vulnerabilities.length > 0 ? vulnerabilities : undefined,
       });
 
-      // Poll for the assistant's response
-      if (uploadResult.runId && uploadResult.threadId) {
-        pollForResponse(uploadResult.threadId, uploadResult.runId, file.name);
-      }
+      // Thread is already set up for follow-up questions via setCurrentThreadId above
 
     } catch (error) {
       console.error('Upload error:', error);
@@ -239,9 +278,9 @@ const ChatInterface = () => {
       addMessage({
         type: 'assistant',
         content: '⚠️ Sorry, I encountered an issue processing your message. Please try again.',
+        useMarkdown: true,
       });
-    } finally {
-      setLoading(false);
+      setLoading(false); // Only turn off loading on error
     }
     
     return false;
@@ -263,40 +302,49 @@ const ChatInterface = () => {
         const result = await response.json();
 
         if (result.completed) {
+          setLoading(false); // Turn off loading when response is complete
+          
           if (result.status === 'completed' && result.response) {
             addMessage({
               type: 'assistant',
               content: result.response,
+              useMarkdown: true,
             });
           } else if (result.status === 'failed') {
             addMessage({
               type: 'assistant',
               content: `❌ I encountered an issue processing your message: ${result.error || 'Unknown error occurred.'}`,
+              useMarkdown: true,
             });
           }
           return;
         }
 
-        // Continue polling if not completed and under max attempts
+        // Continue polling if not completed
         attempts++;
         if (attempts < maxAttempts) {
-          setTimeout(poll, 2000);
+          setTimeout(poll, 1000); // Poll every 1 second for chat responses
         } else {
+          setLoading(false); // Turn off loading on timeout
           addMessage({
             type: 'assistant',
-            content: `⏱️ I'm taking longer than expected to process your message. Please try asking again.`,
+            content: '⏱️ I\'m taking longer than expected to respond. Please try asking your question again.',
+            useMarkdown: true,
           });
         }
       } catch (error) {
-        console.error('Assistant polling error:', error);
+        setLoading(false); // Turn off loading on error
+        console.error('Chat polling error:', error);
         addMessage({
           type: 'assistant',
-          content: `⚠️ There was an issue getting my response. Please try again.`,
+          content: '⚠️ There was an issue getting my response. Please try again.',
+          useMarkdown: true,
         });
       }
     };
 
-    setTimeout(poll, 1000);
+    // Start polling immediately for chat responses
+    poll();
   };
 
   const handleSendMessage = async () => {

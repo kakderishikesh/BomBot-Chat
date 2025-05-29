@@ -9,7 +9,7 @@ import { Search } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 
 const PackageQueryForm = () => {
-  const { addMessage, setLoading, isLoading, currentThreadId } = useChat();
+  const { addMessage, setLoading, isLoading, currentThreadId, setCurrentThreadId } = useChat();
   const [formData, setFormData] = useState({
     packageName: '',
     ecosystem: '',
@@ -108,80 +108,78 @@ const PackageQueryForm = () => {
 
       const result = await response.json();
 
-      // If we have a threadId and the response includes a runId, poll for AI response
-      if (currentThreadId && result.runId) {
-        // Add a loading message
-        addMessage({
-          type: 'assistant',
-          content: `🔍 I found the vulnerability data for ${formData.packageName || formData.cve}. Let me analyze this for you...`,
-        });
+      // Always display quick templated response first, regardless of threadId
+      const osvData = result.result;
+      let responseContent = '';
+      let vulnerabilities = [];
 
-        // Poll for the assistant's response
-        pollForAIResponse(currentThreadId, result.runId);
-      } else {
-        // Display raw results if no AI integration
-        const osvData = result.result;
-        let responseContent = '';
-        let vulnerabilities = [];
-
-        if (formData.cve) {
-          // Single CVE response
-          if (osvData) {
-            responseContent = `**CVE Details for ${formData.cve}:**\n\n`;
-            responseContent += `**Summary:** ${osvData.summary || 'No summary available'}\n`;
-            responseContent += `**Severity:** ${osvData.severity?.[0]?.score || 'Not specified'}\n`;
-            responseContent += `**Published:** ${new Date(osvData.published).toLocaleDateString()}\n`;
-            
-            if (osvData.affected && osvData.affected.length > 0) {
-              responseContent += `\n**Affected Packages:**\n`;
-              osvData.affected.forEach((affected: any, index: number) => {
-                responseContent += `${index + 1}. ${affected.package.name} (${affected.package.ecosystem})\n`;
-              });
-            }
-
-            vulnerabilities = [{
-              id: formData.cve,
-              severity: osvData.severity?.[0]?.score || 'Unknown',
-              package: osvData.affected?.[0]?.package.name || 'Multiple',
-              description: osvData.summary || 'No description available'
-            }];
-          } else {
-            responseContent = `CVE ${formData.cve} was not found in the OSV database.`;
-          }
-        } else {
-          // Package query response
-          if (osvData && osvData.vulns && osvData.vulns.length > 0) {
-            const vulnCount = osvData.vulns.length;
-            responseContent = `**Found ${vulnCount} vulnerabilit${vulnCount > 1 ? 'ies' : 'y'} for ${formData.packageName}**\n\n`;
-            
-            osvData.vulns.slice(0, 5).forEach((vuln: any, index: number) => {
-              responseContent += `**${index + 1}. ${vuln.id}**\n`;
-              responseContent += `- Severity: ${vuln.severity?.[0]?.score || 'Not specified'}\n`;
-              responseContent += `- Summary: ${vuln.summary || 'No summary available'}\n\n`;
+      if (formData.cve) {
+        // Single CVE response
+        if (osvData) {
+          responseContent = `**CVE Details for ${formData.cve}:**\n\n`;
+          responseContent += `**Summary:** ${osvData.summary || 'No summary available'}\n`;
+          responseContent += `**Severity:** ${osvData.severity?.[0]?.score || 'Not specified'}\n`;
+          responseContent += `**Published:** ${new Date(osvData.published).toLocaleDateString()}\n`;
+          
+          if (osvData.affected && osvData.affected.length > 0) {
+            responseContent += `\n**Affected Packages:**\n`;
+            osvData.affected.forEach((affected: any, index: number) => {
+              responseContent += `${index + 1}. ${affected.package.name} (${affected.package.ecosystem})\n`;
             });
-
-            if (vulnCount > 5) {
-              responseContent += `... and ${vulnCount - 5} more vulnerabilities.\n\n`;
-            }
-
-            vulnerabilities = osvData.vulns.map((vuln: any) => ({
-              id: vuln.id,
-              severity: vuln.severity?.[0]?.score || 'Unknown',
-              package: formData.packageName,
-              version: formData.version || 'Multiple',
-              description: vuln.summary || 'No description available'
-            }));
-          } else {
-            responseContent = `✅ **Good news!** No known vulnerabilities found for ${formData.packageName}${formData.version ? ` version ${formData.version}` : ''} in the ${formData.ecosystem} ecosystem.`;
           }
-        }
 
-        // Add assistant response
-        addMessage({
-          type: 'assistant',
-          content: responseContent,
-          vulnerabilities: vulnerabilities.length > 0 ? vulnerabilities : undefined,
-        });
+          responseContent += `\n💡 *Ask me "detailed analysis of ${formData.cve}" for comprehensive remediation guidance*`;
+
+          vulnerabilities = [{
+            id: formData.cve,
+            severity: osvData.severity?.[0]?.score || 'Unknown',
+            package: osvData.affected?.[0]?.package.name || 'Multiple',
+            version: osvData.affected?.[0]?.ranges?.[0]?.events?.[0]?.introduced || 'Multiple',
+            description: osvData.summary || 'No description available'
+          }];
+        } else {
+          responseContent = `CVE ${formData.cve} was not found in the OSV database.`;
+        }
+      } else {
+        // Package query response
+        if (osvData && osvData.vulns && osvData.vulns.length > 0) {
+          const vulnCount = osvData.vulns.length;
+          responseContent = `**Found ${vulnCount} vulnerabilit${vulnCount > 1 ? 'ies' : 'y'} for ${formData.packageName}**\n\n`;
+          
+          osvData.vulns.slice(0, 5).forEach((vuln: any, index: number) => {
+            responseContent += `**${index + 1}. ${vuln.id}**\n`;
+            responseContent += `- Severity: ${vuln.severity?.[0]?.score || 'Not specified'}\n`;
+            responseContent += `- Summary: ${vuln.summary || 'No summary available'}\n\n`;
+          });
+
+          if (vulnCount > 5) {
+            responseContent += `... and ${vulnCount - 5} more vulnerabilities.\n\n`;
+          }
+
+          responseContent += `💡 *Ask me "detailed analysis of ${formData.packageName}" for comprehensive security assessment*`;
+
+          vulnerabilities = osvData.vulns.map((vuln: any) => ({
+            id: vuln.id,
+            severity: vuln.severity?.[0]?.score || 'Unknown',
+            package: formData.packageName,
+            version: formData.version || 'Multiple',
+            description: vuln.summary || 'No description available'
+          }));
+        } else {
+          responseContent = `✅ **Good news!** No known vulnerabilities found for ${formData.packageName}${formData.version ? ` version ${formData.version}` : ''} in the ${formData.ecosystem} ecosystem.\n\n💡 *Ask me about this package for additional security recommendations*`;
+        }
+      }
+
+      // Add quick templated response
+      addMessage({
+        type: 'assistant',
+        content: responseContent,
+        vulnerabilities: vulnerabilities.length > 0 ? vulnerabilities : undefined,
+      });
+
+      // Set up thread for follow-up questions if we got data and have threadId/runId
+      if (result.runId && result.threadId) {
+        setCurrentThreadId(result.threadId);
       }
 
       toast({
