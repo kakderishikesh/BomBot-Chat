@@ -1,6 +1,5 @@
-import formidable, { IncomingForm } from 'formidable';
+import formidable from 'formidable';
 import fs from 'fs';
-import { spawn } from 'child_process';
 import { NextApiRequest, NextApiResponse } from 'next';
 import { OpenAI } from 'openai';
 import tmp from 'tmp';
@@ -17,6 +16,39 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY! 
 });
 
+interface SBOMPackage {
+  name: string;
+  version?: string;
+  ecosystem: string;
+}
+
+interface OSVVulnerability {
+  id: string;
+  summary: string;
+  details: string;
+  severity?: Array<{
+    type: string;
+    score: string;
+  }>;
+  affected: Array<{
+    package: {
+      name: string;
+      ecosystem: string;
+    };
+    ranges: Array<{
+      type: string;
+      events: Array<{
+        introduced?: string;
+        fixed?: string;
+      }>;
+    }>;
+  }>;
+  references: Array<{
+    type: string;
+    url: string;
+  }>;
+}
+
 interface ScanResult {
   results: Array<{
     source: {
@@ -29,34 +61,128 @@ interface ScanResult {
         version: string;
         ecosystem: string;
       };
-      vulnerabilities: Array<{
-        id: string;
-        summary: string;
-        details: string;
-        severity?: Array<{
-          type: string;
-          score: string;
-        }>;
-        affected: Array<{
-          package: {
-            name: string;
-            ecosystem: string;
-          };
-          ranges: Array<{
-            type: string;
-            events: Array<{
-              introduced?: string;
-              fixed?: string;
-            }>;
-          }>;
-        }>;
-        references: Array<{
-          type: string;
-          url: string;
-        }>;
-      }>;
+      vulnerabilities: OSVVulnerability[];
     }>;
   }>;
+}
+
+// Parse SBOM file to extract packages
+function parseSBOMPackages(sbomContent: string, fileName: string): SBOMPackage[] {
+  try {
+    const sbom = JSON.parse(sbomContent);
+    const packages: SBOMPackage[] = [];
+
+    // Handle SPDX format
+    if (sbom.spdxVersion || sbom.SPDXID) {
+      if (sbom.packages) {
+        sbom.packages.forEach((pkg: any) => {
+          if (pkg.name && pkg.name !== 'NOASSERTION') {
+            // Extract ecosystem from package manager or downloadLocation
+            let ecosystem = 'npm'; // default
+            if (pkg.downloadLocation) {
+              const url = pkg.downloadLocation.toLowerCase();
+              if (url.includes('pypi') || url.includes('python')) ecosystem = 'PyPI';
+              else if (url.includes('maven')) ecosystem = 'Maven';
+              else if (url.includes('nuget')) ecosystem = 'NuGet';
+              else if (url.includes('golang') || url.includes('go.mod')) ecosystem = 'Go';
+              else if (url.includes('rubygems')) ecosystem = 'RubyGems';
+              else if (url.includes('cargo') || url.includes('crates')) ecosystem = 'crates.io';
+            }
+            
+            packages.push({
+              name: pkg.name,
+              version: pkg.versionInfo || pkg.version,
+              ecosystem: ecosystem
+            });
+          }
+        });
+      }
+    }
+    // Handle CycloneDX format
+    else if (sbom.bomFormat === 'CycloneDX' || sbom.components) {
+      if (sbom.components) {
+        sbom.components.forEach((component: any) => {
+          if (component.name && component.purl) {
+            // Parse package URL (purl) to extract ecosystem
+            const purlParts = component.purl.split(':');
+            if (purlParts.length >= 3) {
+              const ecosystem = purlParts[1];
+              const ecosystemMap: { [key: string]: string } = {
+                'npm': 'npm',
+                'pypi': 'PyPI', 
+                'maven': 'Maven',
+                'nuget': 'NuGet',
+                'golang': 'Go',
+                'gem': 'RubyGems',
+                'cargo': 'crates.io',
+                'composer': 'Packagist'
+              };
+              
+              packages.push({
+                name: component.name,
+                version: component.version,
+                ecosystem: ecosystemMap[ecosystem] || ecosystem
+              });
+            }
+          }
+        });
+      }
+    }
+    // Handle generic JSON SBOM
+    else if (sbom.packages || sbom.dependencies) {
+      const packageList = sbom.packages || sbom.dependencies || [];
+      packageList.forEach((pkg: any) => {
+        if (pkg.name) {
+          packages.push({
+            name: pkg.name,
+            version: pkg.version,
+            ecosystem: pkg.ecosystem || 'npm' // default to npm
+          });
+        }
+      });
+    }
+
+    return packages;
+  } catch (error) {
+    console.error('Error parsing SBOM:', error);
+    throw new Error('Invalid SBOM format. Please ensure the file is valid JSON.');
+  }
+}
+
+// Query OSV API for package vulnerabilities
+async function queryOSVForPackage(pkg: SBOMPackage): Promise<OSVVulnerability[]> {
+  try {
+    const queryBody: any = {
+      package: { 
+        name: pkg.name, 
+        ecosystem: pkg.ecosystem 
+      }
+    };
+    
+    if (pkg.version) {
+      queryBody.version = pkg.version;
+    }
+
+    const response = await fetch('https://api.osv.dev/v1/query', {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json',
+        'User-Agent': 'BomBot-SBOM-Scanner/1.0'
+      },
+      body: JSON.stringify(queryBody)
+    });
+
+    if (!response.ok) {
+      console.warn(`OSV query failed for ${pkg.name}: ${response.status}`);
+      return [];
+    }
+
+    const result = await response.json();
+    return result.vulns || [];
+  } catch (error) {
+    console.warn(`Error querying OSV for ${pkg.name}:`, error);
+    return [];
+  }
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -102,84 +228,89 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
     }
 
-    // Run osv-scanner on the uploaded file
-    const scannerPromise = new Promise<string>((resolve, reject) => {
-      // Try different possible paths for osv-scanner
-      const possiblePaths = [
-        'osv-scanner',
-        './osv-scanner',
-        '/usr/local/bin/osv-scanner',
-        '/opt/homebrew/bin/osv-scanner',
-        process.env.OSV_SCANNER_PATH || 'osv-scanner'
-      ];
-
-      let scannerPath = possiblePaths[0];
-      
-      const scanner = spawn(scannerPath, [
-        '--format=json',
-        '--sbom',
-        filePath
-      ], {
-        stdio: ['pipe', 'pipe', 'pipe']
-      });
-
-      let output = '';
-      let errorOutput = '';
-
-      scanner.stdout.on('data', (data) => {
-        output += data.toString();
-      });
-
-      scanner.stderr.on('data', (data) => {
-        errorOutput += data.toString();
-      });
-
-      scanner.on('close', (code) => {
-        if (code === 0 || code === 1) {
-          // Exit code 0: no vulnerabilities found
-          // Exit code 1: vulnerabilities found (still successful scan)
-          resolve(output);
-        } else {
-          console.error('osv-scanner stderr:', errorOutput);
-          reject(new Error(`osv-scanner failed with code ${code}: ${errorOutput}`));
-        }
-      });
-
-      scanner.on('error', (err) => {
-        reject(new Error(`Failed to start osv-scanner: ${err.message}`));
-      });
-    });
-
-    let scanOutput: string;
+    // Read and parse SBOM file
+    const sbomContent = fs.readFileSync(filePath, 'utf-8');
+    let packages: SBOMPackage[];
+    
     try {
-      scanOutput = await scannerPromise;
-    } catch (error) {
-      console.error('OSV scanner error:', error);
-      return res.status(500).json({ 
-        error: 'Failed to scan SBOM file. Please ensure the file is a valid SBOM format.',
-        details: error instanceof Error ? error.message : 'Unknown error'
-      });
-    }
-
-    // Parse the scanner output
-    let parsedResults: ScanResult;
-    try {
-      parsedResults = JSON.parse(scanOutput);
+      packages = parseSBOMPackages(sbomContent, fileName);
     } catch (parseError) {
-      console.error('Failed to parse osv-scanner output:', parseError);
-      return res.status(500).json({ 
-        error: 'Failed to parse scanner results',
-        rawOutput: scanOutput
+      return res.status(400).json({ 
+        error: 'Failed to parse SBOM file. Please ensure it follows SPDX or CycloneDX format.',
+        details: parseError instanceof Error ? parseError.message : 'Unknown parsing error'
       });
     }
+
+    if (packages.length === 0) {
+      return res.status(400).json({ 
+        error: 'No packages found in SBOM file. Please verify the file format.' 
+      });
+    }
+
+    // Query OSV for vulnerabilities (limit to first 50 packages to avoid timeout)
+    console.log(`Scanning ${Math.min(packages.length, 50)} packages for vulnerabilities...`);
+    const packagesToScan = packages.slice(0, 50);
+    const vulnerabilityResults: Array<{
+      package: SBOMPackage;
+      vulnerabilities: OSVVulnerability[];
+    }> = [];
+
+    // Process packages in batches to avoid rate limiting
+    for (let i = 0; i < packagesToScan.length; i += 5) {
+      const batch = packagesToScan.slice(i, i + 5);
+      const batchPromises = batch.map(pkg => 
+        queryOSVForPackage(pkg).then(vulns => ({ package: pkg, vulnerabilities: vulns }))
+      );
+      
+      const batchResults = await Promise.all(batchPromises);
+      vulnerabilityResults.push(...batchResults);
+      
+      // Small delay between batches
+      if (i + 5 < packagesToScan.length) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+    }
+
+    // Build scan results in osv-scanner compatible format
+    const scanResults: ScanResult = {
+      results: [{
+        source: {
+          path: fileName,
+          type: 'sbom'
+        },
+        packages: vulnerabilityResults
+          .filter(result => result.vulnerabilities.length > 0)
+          .map(result => ({
+            package: {
+              name: result.package.name,
+              version: result.package.version || 'unknown',
+              ecosystem: result.package.ecosystem
+            },
+            vulnerabilities: result.vulnerabilities
+          }))
+      }]
+    };
 
     // Create a thread with the OpenAI Assistant
     const thread = await openai.beta.threads.create();
 
     // Send the scan results to the assistant
+    const totalVulns = vulnerabilityResults.reduce((sum, result) => sum + result.vulnerabilities.length, 0);
+    const vulnPackages = vulnerabilityResults.filter(result => result.vulnerabilities.length > 0).length;
+    
     await openai.beta.threads.messages.create(thread.id, {
       role: 'user',
-      content: `I've uploaded an SBOM file "${fileName}" and here are the vulnerability scan results from osv-scanner:\n\n${JSON.stringify(parsedResults, null, 2)}\n\nPlease analyze these results and provide a summary of the vulnerabilities found, their severity levels, and recommended actions.`
+      content: `I've uploaded an SBOM file "${fileName}" with ${packages.length} packages. Here's the vulnerability scan results:
+
+**Scan Summary:**
+- Total packages scanned: ${packagesToScan.length}
+- Packages with vulnerabilities: ${vulnPackages}
+- Total vulnerabilities found: ${totalVulns}
+
+**Detailed Results:**
+${JSON.stringify(scanResults, null, 2)}
+
+Please analyze these results and provide a comprehensive security assessment including vulnerability severity breakdown, affected packages, and recommended remediation actions.`
     });
 
     // Create a run with the assistant
@@ -266,8 +397,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       runId: run.id, 
       threadId: thread.id,
       fileName: fileName,
-      vulnerabilitiesFound: parsedResults.results?.[0]?.packages?.reduce((total, pkg) => 
-        total + (pkg.vulnerabilities?.length || 0), 0) || 0
+      packagesScanned: packagesToScan.length,
+      totalPackages: packages.length,
+      vulnerabilitiesFound: totalVulns
     });
 
   } catch (error) {
