@@ -326,11 +326,8 @@ const ChatInterface = () => {
           setTimeout(poll, 1000); // Poll every 1 second for chat responses
         } else {
           setLoading(false); // Turn off loading on timeout
-          addMessage({
-            type: 'assistant',
-            content: '⏱️ I\'m taking longer than expected to respond. Please try asking your question again.',
-            useMarkdown: true,
-          });
+          // Just stop polling silently - no timeout message
+          console.log('Chat polling timed out, but continuing to wait...');
         }
       } catch (error) {
         setLoading(false); // Turn off loading on error

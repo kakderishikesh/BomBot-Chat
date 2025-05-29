@@ -278,10 +278,8 @@ const PackageQueryForm = () => {
         if (attempts < maxAttempts) {
           setTimeout(poll, 2000); // Poll every 2 seconds
         } else {
-          addMessage({
-            type: 'assistant',
-            content: `⏱️ AI analysis is taking longer than expected. The data has been retrieved from OSV, but detailed analysis is still processing.`,
-          });
+          // Just stop polling silently - no timeout message
+          console.log('AI polling timed out, but continuing to wait...');
         }
       } catch (error) {
         console.error('AI polling error:', error);

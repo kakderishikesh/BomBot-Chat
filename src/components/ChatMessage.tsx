@@ -94,7 +94,10 @@ const ChatMessage = ({ message }: ChatMessageProps) => {
               <div className="leading-relaxed whitespace-pre-wrap prose prose-sm max-w-none
                 prose-headings:text-gray-900 prose-p:text-gray-900 prose-li:text-gray-900
                 prose-strong:text-gray-900 prose-code:bg-gray-100 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:text-sm
-                prose-pre:bg-gray-100 prose-pre:border prose-pre:border-gray-200">
+                prose-pre:bg-gray-100 prose-pre:border prose-pre:border-gray-200
+                prose-p:my-2 prose-li:my-0 prose-ul:my-2 prose-ol:my-2
+                prose-h1:mb-2 prose-h2:mb-2 prose-h3:mb-2 prose-h4:mb-1
+                [&>*:first-child]:mt-0 [&>*:last-child]:mb-0">
                 <ReactMarkdown>{message.content}</ReactMarkdown>
               </div>
             ) : (

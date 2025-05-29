@@ -149,6 +149,36 @@ function parseSBOMPackages(sbomContent: string, fileName: string): SBOMPackage[]
   }
 }
 
+// Helper function to extract simple severity from OSV data
+function extractSeverity(vuln: any) {
+  // Try to find CVSS severity first
+  if (vuln.severity && vuln.severity.length > 0) {
+    for (const sev of vuln.severity) {
+      if (sev.type === 'CVSS_V3') {
+        const score = parseFloat(sev.score?.split('/')[0] || '0');
+        if (score >= 9.0) return 'CRITICAL';
+        if (score >= 7.0) return 'HIGH';
+        if (score >= 4.0) return 'MEDIUM';
+        if (score > 0) return 'LOW';
+      }
+    }
+  }
+  
+  // Try database_specific for GHSA severity
+  if (vuln.database_specific?.severity) {
+    return vuln.database_specific.severity.toUpperCase();
+  }
+  
+  // Fallback to parsing from summary or other fields
+  const content = (vuln.summary || vuln.details || '').toUpperCase();
+  if (content.includes('CRITICAL')) return 'CRITICAL';
+  if (content.includes('HIGH')) return 'HIGH';
+  if (content.includes('MEDIUM') || content.includes('MODERATE')) return 'MEDIUM';
+  if (content.includes('LOW')) return 'LOW';
+  
+  return 'Unknown';
+}
+
 // Query OSV API for package vulnerabilities
 async function queryOSVForPackage(pkg: SBOMPackage): Promise<OSVVulnerability[]> {
   try {
@@ -411,7 +441,7 @@ Please provide a QUICK summary of the most critical findings with OSV.dev links 
             version: result.package.version || 'unknown',
             vulns: result.vulnerabilities.slice(0, 3).map(vuln => ({
               id: vuln.id,
-              severity: vuln.severity?.[0]?.score || 'Unknown',
+              severity: extractSeverity(vuln),
               summary: vuln.summary || 'No summary available'
             }))
           }))
