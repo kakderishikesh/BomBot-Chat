@@ -29,6 +29,6 @@
     "noUnusedLocals": false,
     "strictNullChecks": false
   },
-  "include": ["**/*.ts", "**/*.tsx"],
-  "exclude": ["node_modules", ".vercel"]
+  "include": ["**/*.ts", "**/*.tsx", "pages/**/*"],
+  "exclude": ["node_modules", ".vercel", "src/**/*", "dist", "vite.config.ts"]
 } 
