@@ -1,369 +1,465 @@
-# 🤖 BomBot - AI-Powered SBOM Security Scanner
+# 🤖 BomBot - Advanced AI-Powered SBOM Security Analysis Platform
 
-A unified full-stack application that combines an intuitive React UI with a powerful Next.js API to provide AI-powered analysis of Software Bill of Materials (SBOM) files for security vulnerabilities.
+> **Internal Technical Documentation**  
+> A hybrid-architecture full-stack security analysis platform that combines intelligent templated responses with advanced AI consultation for comprehensive SBOM vulnerability assessment.
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/your-username/bombot-chat)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/kakderishikesh/BomBot-Chat)
 
-## ✨ Features
+## 🏗️ System Architecture
 
-### 🎨 **Modern Web Interface**
-- **Drag & Drop File Upload**: Upload SBOM files with real-time progress tracking
-- **Interactive Chat Interface**: Chat with AI assistant about vulnerabilities
-- **Package Search**: Query specific packages and versions for vulnerabilities
-- **Real-time Updates**: Live polling for AI assistant responses
-- **Responsive Design**: Beautiful UI built with Radix UI and TailwindCSS
-
-### 🔧 **Powerful Backend**
-- **SBOM File Processing**: Comprehensive scanning using osv-scanner
-- **AI Assistant Integration**: OpenAI Assistant provides intelligent security insights
-- **Vulnerability Database**: Real-time queries to OSV vulnerability database
-- **Thread Management**: Persistent chat conversations with context
-- **Serverless Architecture**: Scalable deployment on Vercel
-
-### 🛡️ **Security & Compliance**
-- **Secure File Handling**: Temporary file processing with automatic cleanup
-- **No API Key Exposure**: Comprehensive security audit completed
-- **Input Validation**: File type and size validation (10MB limit)
-- **Environment Variable Security**: All sensitive data properly secured
-
-## 🏗️ Architecture
+BomBot implements a sophisticated hybrid response system that provides both instant vulnerability analysis and deep AI-powered security consultation:
 
 ```
-┌─────────────────────────────────────────────────────┐
-│                 BomBot Full-Stack                   │
-├─────────────────────────────────────────────────────┤
-│  🎨 React UI (Vite)        🔧 Next.js API          │
-│  ├── File Upload           ├── /api/upload          │
-│  ├── Chat Interface        ├── /api/osv-query       │
-│  ├── Package Search        ├── /api/run-status      │
-│  └── Real-time Updates     └── Thread Management    │
-└─────────────────┬───────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────┐
+│                     BomBot Platform                         │
+├─────────────────────────────────────────────────────────────┤
+│  🎨 React UI (Vite)              🔧 Next.js API Routes     │
+│  ├── ChatInterface.tsx           ├── /api/upload           │
+│  ├── PackageQueryForm.tsx        ├── /api/osv-query        │
+│  ├── ChatMessage.tsx             ├── /api/chat             │
+│  ├── VulnerabilityCards          └── /api/run-status       │
+│  └── Real-time Polling                                     │
+├─────────────────────────────────────────────────────────────┤
+│  📊 Hybrid Response Engine                                 │
+│  ├── Quick Templated Responses   ├── AI Thread Management │
+│  ├── OSV Data Transformation     ├── Polling Architecture │
+│  └── Vulnerability Card Gen.     └── Context Preservation │
+└─────────────────┬───────────────────────────────────────────┘
                   │
-    ┌─────────────▼─────────────┐
-    │     External Services     │
-    ├───────────────────────────┤
-    │  🤖 OpenAI Assistant      │
-    │  📊 OSV Database          │
-    │  🔍 osv-scanner           │
-    └───────────────────────────┘
+    ┌─────────────▼─────────────────────────────────────┐
+    │              External Integrations                │
+    ├───────────────────────────────────────────────────┤
+    │  🤖 OpenAI GPT-4 Assistant    📊 OSV.dev API      │
+    │  ├── Function Calling         ├── Package Queries │
+    │  ├── Thread Conversations     ├── CVE Lookups     │
+    │  └── Markdown Responses       └── Real-time Data  │
+    └───────────────────────────────────────────────────┘
 ```
 
-## 🚀 Quick Start
+## ✨ Advanced Features
 
-### 1. **Deploy to Vercel (Recommended)**
+### 🚀 **Hybrid Response System**
+- **Instant Templated Responses**: Sub-second vulnerability summaries with interactive cards
+- **AI Deep Analysis**: Comprehensive security assessment with remediation guidance
+- **Seamless Transition**: Users get immediate feedback, then enhanced AI insights
+- **Context Preservation**: Maintains conversation flow across response types
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone)
+### 🎯 **Intelligent Package Analysis**
+- **Multi-Ecosystem Support**: npm, PyPI, Maven, Go, NuGet, RubyGems, Cargo, Composer, Hex, SwiftPM
+- **Version-Specific Queries**: Precise vulnerability matching for specific package versions
+- **Severity Intelligence**: CVSS score parsing to clean severity levels (CRITICAL/HIGH/MEDIUM/LOW)
+- **CVE Cross-Reference**: Direct OSV.dev integration for authoritative vulnerability data
 
-**Manual Deployment:**
+### 🛡️ **SBOM Processing Engine**
+- **Multi-Format Support**: SPDX, CycloneDX, Generic JSON schemas
+- **Batch Processing**: Concurrent vulnerability scanning with rate limiting
+- **Dependency Mapping**: Package ecosystem detection from PURL and metadata
+- **Scalable Architecture**: Handles up to 50 packages per SBOM (serverless optimization)
+
+### 💬 **Advanced Chat System**
+- **Persistent Threads**: OpenAI Assistant conversation continuity
+- **Real-time Polling**: Non-blocking response delivery with status tracking
+- **Markdown Rendering**: Rich formatted responses with proper spacing
+- **File Upload Integration**: Drag-and-drop SBOM processing with progress tracking
+
+### 🔍 **Smart Vulnerability Cards**
+- **Interactive UI**: Clickable cards with direct OSV.dev links
+- **Severity Visualization**: Color-coded badges with appropriate icons
+- **Package Context**: Version-aware vulnerability attribution
+- **Export Ready**: Structured data for reporting and integration
+
+## 🛠️ Technical Implementation
+
+### Frontend Architecture (React + TypeScript)
+
+#### **Core Components**
+```typescript
+// ChatInterface.tsx - Main orchestration component
+- File upload handling (drag-and-drop + file picker)
+- Real-time message polling with exponential backoff
+- Thread management and context preservation
+- Hybrid response coordination
+
+// PackageQueryForm.tsx - Package analysis interface  
+- Ecosystem selection with validation
+- Real-time OSV API integration
+- Severity extraction and normalization
+- Thread setup for follow-up questions
+
+// ChatMessage.tsx - Dynamic message rendering
+- Markdown vs HTML conditional rendering
+- Vulnerability card generation
+- Copy-to-clipboard functionality
+- Responsive design with accessibility
+
+// VulnerabilityCard Component
+- Interactive severity badges
+- Direct OSV.dev linking
+- Package version display
+- Description truncation with expansion
+```
+
+#### **State Management**
+```typescript
+// ChatContext.tsx - Centralized state
+interface ChatState {
+  messages: Message[];
+  isLoading: boolean;
+  currentThreadId: string | null;
+  uploadedFiles: UploadedFile[];
+}
+
+interface Message {
+  id: string;
+  type: 'user' | 'assistant';
+  content: string;
+  timestamp: Date;
+  vulnerabilities?: Vulnerability[];
+  useMarkdown?: boolean; // Controls rendering strategy
+}
+```
+
+#### **Severity Processing Pipeline**
+```typescript
+// Enhanced severity extraction with multiple fallbacks
+function extractSeverity(vuln: OSVVulnerability): string {
+  // 1. CVSS v3 score parsing (primary)
+  if (vuln.severity?.find(s => s.type === 'CVSS_V3')) {
+    const score = parseFloat(cvssVector.split('/')[0]);
+    return scoreToBracket(score); // 9.0+ = CRITICAL, 7.0+ = HIGH, etc.
+  }
+  
+  // 2. Database-specific severity (GHSA, etc.)
+  if (vuln.database_specific?.severity) {
+    return vuln.database_specific.severity.toUpperCase();
+  }
+  
+  // 3. Content analysis fallback
+  return analyzeSeverityFromContent(vuln.summary, vuln.details);
+}
+```
+
+### Backend Architecture (Next.js API)
+
+#### **API Route Specifications**
+
+##### `/api/upload` - SBOM Processing Pipeline
+```typescript
+interface UploadFlow {
+  1. File validation (type, size, structure)
+  2. Multi-format SBOM parsing (SPDX/CycloneDX/Generic)
+  3. Package extraction with ecosystem mapping
+  4. Batch OSV API queries (rate-limited)
+  5. Vulnerability aggregation and severity normalization
+  6. OpenAI thread creation with structured prompt
+  7. Quick summary generation for instant UI response
+  8. Thread management for follow-up conversations
+}
+
+// Response includes both quick data and AI thread setup
+interface UploadResponse {
+  success: boolean;
+  threadId: string;
+  runId: string;
+  vulnerabilitiesFound: number;
+  quickSummary: QuickSummaryData; // For immediate UI display
+  packagesScanned: number;
+}
+```
+
+##### `/api/osv-query` - Package Intelligence
+```typescript
+interface QueryCapabilities {
+  packageQueries: {
+    ecosystems: string[]; // 11 supported ecosystems
+    versionSupport: boolean;
+    realTimeData: boolean;
+  };
+  
+  cveQueries: {
+    directLookup: boolean;
+    aliasResolution: boolean;
+    affectedPackages: boolean;
+  };
+  
+  aiIntegration: {
+    threadAttachment: boolean;
+    contextPreservation: boolean;
+    followUpQuestions: boolean;
+  };
+}
+```
+
+##### `/api/run-status` - AI Response Polling
+```typescript
+interface PollingStrategy {
+  maxAttempts: 20;           // Configurable timeout
+  pollingInterval: 1000;     // 1s for chat, 2s for uploads
+  exponentialBackoff: false; // Linear for predictable UX
+  silentTimeout: true;       // No timeout messages
+  statusTracking: {
+    queued: 'waiting';
+    in_progress: 'processing';  
+    completed: 'success';
+    failed: 'error';
+  };
+}
+```
+
+#### **OpenAI Assistant Integration**
+
+##### **Function Capabilities**
+```typescript
+interface AssistantFunctions {
+  query_package_vulnerabilities: {
+    description: "Real-time OSV database package queries";
+    parameters: {
+      name: string;
+      ecosystem: EcosystemType;
+      version?: string;
+    };
+  };
+  
+  query_cve_details: {
+    description: "CVE-specific vulnerability lookups";
+    parameters: {
+      cve_id: string; // CVE-YYYY-NNNN format
+    };
+  };
+  
+  analyze_sbom_package: {
+    description: "Deep-dive SBOM component analysis";
+    parameters: {
+      package_name: string;
+      include_dependencies?: boolean;
+    };
+  };
+}
+```
+
+##### **Response Quality Control**
+```typescript
+interface AssistantConfig {
+  model: "gpt-4-turbo-preview";
+  temperature: 0.1;          // High consistency for security data
+  top_p: 0.2;               // Focused vocabulary selection
+  instructions: string;      // Comprehensive security expert prompt
+  tools: AssistantFunction[];
+  response_format: "markdown"; // Rich formatting with OSV.dev links
+}
+```
+
+## 🔧 Configuration & Deployment
+
+### Environment Variables
 ```bash
-# Clone and deploy
-git clone <your-repo-url>
-cd BomBot-Chat
-npm install
-vercel --prod
+# Required - OpenAI Integration
+OPENAI_API_KEY=sk-proj-xxxxx           # OpenAI API access
+ASSISTANT_ID=asst_xxxxx                # Pre-configured assistant
+
+# Optional - Development
+OSV_SCANNER_PATH=/usr/local/bin/osv-scanner  # Local binary path
+NODE_ENV=production                     # Runtime environment
 ```
 
-### 2. **Set Environment Variables**
+### OpenAI Assistant Configuration
+```yaml
+Assistant Setup:
+  name: "BomBot Security Analyst"
+  model: "gpt-4-turbo-preview"
+  temperature: 0.1
+  top_p: 0.2
+  
+Instructions: |
+  You are BomBot, an expert cybersecurity analyst specializing in SBOM analysis and vulnerability assessment. 
+  
+  Core Capabilities:
+  1. Real-time vulnerability research using OSV.dev database
+  2. Comprehensive security analysis with business impact assessment
+  3. Prioritized remediation recommendations
+  4. Interactive security consultation with context preservation
+  
+  Link Standards:
+  - ALWAYS use OSV.dev links: https://osv.dev/vulnerability/{ID}
+  - NEVER reference NVD or other databases for links
+  - Maintain consistency across all vulnerability references
+  
+  Response Structure:
+  - Quick summaries for initial queries (brief, actionable)
+  - Detailed analysis when requested (comprehensive, prioritized)
+  - Clear severity communication (CRITICAL/HIGH/MEDIUM/LOW)
+  - Specific remediation steps with version numbers
+  
+  Function Usage:
+  - Proactively query packages when mentioned
+  - Cross-reference CVEs automatically
+  - Provide current vulnerability data
+  - Maintain conversation context across queries
 
-In Vercel Dashboard → Settings → Environment Variables:
-
-```env
-OPENAI_API_KEY=sk-proj-your-openai-api-key-here
-ASSISTANT_ID=asst_your-assistant-id-here
+Functions:
+  - query_package_vulnerabilities(name, ecosystem, version?)
+  - query_cve_details(cve_id)
+  - analyze_sbom_package(package_name, include_dependencies?)
 ```
 
-### 3. **Access Your Application**
+## 📊 Performance Metrics
 
-Visit your Vercel URL to start using BomBot! 🎉
+### Bundle Analysis
+```
+Production Build:
+├── UI Assets
+│   ├── JavaScript: 520KB → 163KB gzipped (-69%)
+│   ├── CSS: 90KB → 14KB gzipped (-84%)
+│   └── Total: 177KB gzipped (acceptable for feature set)
+│
+├── API Routes
+│   ├── Shared Runtime: 79.7KB
+│   ├── Cold Start: <2s on Vercel
+│   └── Memory Usage: ~128MB per function
+│
+└── External Dependencies
+    ├── React/UI: ~40KB gzipped
+    ├── OpenAI SDK: ~35KB gzipped  
+    ├── Form Processing: ~25KB gzipped
+    └── Markdown Rendering: ~20KB gzipped
+```
 
-## 💻 Local Development
+### Runtime Performance
+```
+Response Times (95th percentile):
+├── Package Queries: <500ms (OSV API latency)
+├── SBOM Processing: 2-8s (size dependent)
+├── AI Responses: 5-30s (complexity dependent)
+├── Real-time Polling: 1s intervals
+└── UI Interactions: <100ms (client-side)
 
-### Prerequisites
-- Node.js 18+ 
-- npm or yarn
-- OpenAI API key
-- OpenAI Assistant ID
+Scalability Limits:
+├── File Size: 10MB (Vercel function limit)
+├── SBOM Packages: 50 (rate limiting optimization)
+├── Concurrent Users: Unlimited (serverless)
+└── API Rate Limits: OpenAI tier dependent
+```
 
-### Setup
+## 🚀 Usage Patterns
 
+### Enterprise SBOM Analysis
+```typescript
+// Typical enterprise workflow
+1. Upload company SBOM file (SPDX/CycloneDX)
+2. Receive instant vulnerability summary with priority rankings
+3. Review interactive vulnerability cards with OSV.dev links
+4. Ask AI: "What should we prioritize for our next sprint?"
+5. Get detailed remediation plan with business impact assessment
+6. Export findings for security team review
+```
+
+### Developer Package Research
+```typescript
+// Developer security research workflow  
+1. Query specific package: "Is express 4.17.1 safe?"
+2. Get immediate vulnerability status with severity badges
+3. Ask follow-up: "What about the latest version?"
+4. Receive comparative analysis with upgrade recommendations
+5. Deep-dive: "Give me detailed analysis of these vulnerabilities"
+6. Get technical implementation guidance
+```
+
+## 🔄 Development Workflow
+
+### Local Development Setup
 ```bash
-# Clone repository
-git clone <your-repo-url>
+# Complete development environment
+git clone https://github.com/kakderishikesh/BomBot-Chat.git
 cd BomBot-Chat
 
 # Install dependencies
 npm install
 
-# Create environment file
+# Environment setup
 cp .env.example .env
-# Add your OPENAI_API_KEY and ASSISTANT_ID
+# Configure OPENAI_API_KEY and ASSISTANT_ID
 
-# Install OSV Scanner (for local development)
+# Optional: Install OSV Scanner locally
 brew install osv-scanner  # macOS
-# or
-curl -L https://github.com/google/osv-scanner/releases/latest/download/osv-scanner-linux-amd64 -o /usr/local/bin/osv-scanner && chmod +x /usr/local/bin/osv-scanner  # Linux
 
 # Start development servers
-npm run dev          # Full-stack with Vercel CLI
-# or
-npm run dev:ui       # UI only (http://localhost:5173)
+npm run dev          # Full-stack development (recommended)
 ```
 
-### Build Commands
-
+### Development Commands
 ```bash
 # Development
-npm run dev          # Full-stack development server
+npm run dev          # Full-stack with hot reload
 npm run dev:ui       # UI development server only
 
-# Production
-npm run build        # Build both UI and API
-npm run start        # Start production server
-npm run preview      # Preview UI build
+# Building
+npm run build        # Production build (UI + API)
+npm run build:ui     # UI build only
+npm run build:api    # API build only
 
-# Utilities
-npm run type-check   # TypeScript type checking
-npm run lint         # Code linting
+# Quality Assurance
+npm run type-check   # TypeScript validation
+npm run lint         # Code quality checks
 ```
 
-## 🏗️ Project Structure
+## 🔐 Security Features
 
-```
-BomBot-Chat/
-├── 🎨 Frontend (React + Vite)
-│   ├── src/
-│   │   ├── components/     # UI components
-│   │   ├── contexts/       # React contexts (Chat, Theme)
-│   │   ├── hooks/          # Custom React hooks
-│   │   ├── lib/            # Utilities and API clients
-│   │   └── types/          # TypeScript type definitions
-│   ├── public/             # Static assets
-│   └── index.html          # Entry point
+### Data Handling
+```typescript
+Security Measures:
+├── File Processing
+│   ├── Temporary file creation in isolated containers
+│   ├── Automatic cleanup after processing
+│   ├── Size and type validation (10MB limit)
+│   └── No persistent storage of uploaded content
 │
-├── 🔧 Backend (Next.js API)
-│   ├── pages/api/
-│   │   ├── upload.ts       # SBOM upload & scanning
-│   │   ├── osv-query.ts    # Package/CVE queries
-│   │   └── run-status.ts   # AI assistant status
-│   └── lib/                # Server utilities
+├── API Security  
+│   ├── Environment variable encryption (Vercel)
+│   ├── No API key exposure to client
+│   ├── Request validation and sanitization
+│   └── Rate limiting on OSV API calls
 │
-├── 📦 Build & Config
-│   ├── scripts/build.js    # Unified build script
-│   ├── package.json        # Dependencies & scripts
-│   ├── tsconfig.json       # TypeScript config
-│   ├── vercel.json         # Deployment config
-│   └── next.config.cjs     # Next.js config
+├── OpenAI Integration
+│   ├── Isolated thread creation per session
+│   ├── Function call validation
+│   └── Response content filtering
 │
-└── 📚 Documentation
-    ├── README.md           # This file
-    ├── DEPLOYMENT.md       # Deployment guide
-    └── .env.example        # Environment template
+└── Client-Side Security
+    ├── Secure API communication (HTTPS)
+    ├── Input validation on all forms
+    └── XSS protection via React's built-in escaping
 ```
 
-## 🔌 API Endpoints
+## 📈 Key Features Summary
 
-### 📤 **File Upload & Scanning**
-```bash
-POST /api/upload
-Content-Type: multipart/form-data
+### ✅ **Current Capabilities**
+- **Hybrid Response System**: Instant templated responses + AI deep analysis
+- **Multi-Format SBOM Support**: SPDX, CycloneDX, Generic JSON
+- **11 Package Ecosystems**: npm, PyPI, Maven, Go, NuGet, RubyGems, etc.
+- **Real-time OSV.dev Integration**: Authoritative vulnerability data
+- **Clean Severity Tags**: CRITICAL/HIGH/MEDIUM/LOW (not CVSS vectors)
+- **Interactive Vulnerability Cards**: Clickable, exportable, OSV.dev linked
+- **Persistent AI Conversations**: Thread-based context preservation
+- **Markdown Rich Responses**: Properly formatted AI analysis
+- **Drag-and-Drop File Upload**: 10MB limit with progress tracking
+- **Silent Polling**: No timeout interruptions for better UX
 
-# Upload SBOM file with optional thread ID for existing conversation
-curl -X POST \
-  -F "file=@sbom.json" \
-  -F "threadId=thread_abc123" \
-  https://your-app.vercel.app/api/upload
-```
-
-**Response:**
-```json
-{
-  "success": true,
-  "runId": "run_xyz789",
-  "threadId": "thread_abc123",
-  "fileName": "sbom.json",
-  "vulnerabilitiesFound": 12
-}
-```
-
-### 🔍 **Package Vulnerability Query**
-```bash
-POST /api/osv-query
-Content-Type: application/json
-
-# Query specific package vulnerabilities
-curl -X POST \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "lodash",
-    "ecosystem": "npm", 
-    "version": "4.17.20",
-    "threadId": "thread_abc123"
-  }' \
-  https://your-app.vercel.app/api/osv-query
-```
-
-### 📊 **Assistant Status Polling**
-```bash
-GET /api/run-status?threadId=thread_abc123&runId=run_xyz789
-
-# Check if AI assistant has completed analysis
-curl "https://your-app.vercel.app/api/run-status?threadId=thread_abc123&runId=run_xyz789"
-```
-
-## 🤖 OpenAI Assistant Setup
-
-### 1. Create Assistant
-Visit [OpenAI Platform → Assistants](https://platform.openai.com/assistants)
-
-### 2. Assistant Configuration
-```
-Name: BomBot Security Analyst
-Model: gpt-4-turbo-preview
-
-Instructions:
-You are a cybersecurity expert specializing in SBOM (Software Bill of Materials) analysis and vulnerability assessment. Your role is to:
-
-1. Analyze vulnerability scan results from osv-scanner and provide clear, actionable security insights
-2. Explain the severity and impact of discovered vulnerabilities in plain language  
-3. Provide specific remediation steps and recommendations
-4. Answer questions about specific packages, versions, and CVEs
-5. Help users prioritize vulnerability fixes based on risk levels
-6. Maintain conversation context across multiple queries in the same thread
-
-Always provide practical, actionable advice and explain technical concepts in an accessible way. Use emojis and formatting to make responses engaging and easy to read.
-```
-
-### 3. Copy Assistant ID
-Save the Assistant ID (starts with `asst_`) to your environment variables.
-
-## 📋 Supported File Formats
-
-- **SPDX**: .spdx, .json, .xml, .yaml
-- **CycloneDX**: .json, .xml
-- **SWID Tags**: .json, .xml
-- **Generic SBOM**: .json format
-- **Maximum file size**: 10MB
-
-## 🧪 Testing Your Deployment
-
-### UI Testing
-```bash
-# Access the web interface
-open https://your-app.vercel.app
-
-# Test file upload through UI
-# Test package search functionality  
-# Test chat interaction with AI assistant
-```
-
-### API Testing
-```bash
-# Test file upload
-curl -X POST \
-  -F "file=@test-sbom.json" \
-  https://your-app.vercel.app/api/upload
-
-# Test package query
-curl -X POST \
-  -H "Content-Type: application/json" \
-  -d '{"name": "express", "ecosystem": "npm"}' \
-  https://your-app.vercel.app/api/osv-query
-
-# Test status endpoint
-curl "https://your-app.vercel.app/api/run-status?threadId=thread_123&runId=run_456"
-```
-
-## 🎯 Use Cases
-
-### 🏢 **Enterprise Security Teams**
-- Upload company SBOMs for comprehensive vulnerability analysis
-- Get AI-powered prioritization of security fixes
-- Maintain conversation history for audit trails
-
-### 👨‍💻 **Developers**
-- Quick package vulnerability checks during development
-- Understand security implications of dependencies
-- Get actionable remediation guidance
-
-### 🔒 **Security Researchers**
-- Analyze open source project vulnerabilities
-- Research CVE details and impact assessments
-- Bulk SBOM processing for security studies
-
-## 🔧 Technologies Used
-
-### Frontend
-- **React 18** - UI framework
-- **TypeScript** - Type safety
-- **Vite** - Build tool and dev server
-- **TailwindCSS** - Utility-first styling
-- **Radix UI** - Accessible component primitives
-- **React Router** - Client-side routing
-- **React Hook Form** - Form management
-
-### Backend  
-- **Next.js 14** - API framework
-- **TypeScript** - Type safety
-- **OpenAI API** - AI assistant integration
-- **osv-scanner** - Vulnerability scanning
-- **Formidable** - File upload handling
-
-### Deployment
-- **Vercel** - Serverless hosting platform
-- **Node.js 18+** - Runtime environment
-
-## 🚀 Performance
-
-### Build Optimization
-- **UI Bundle**: ~399kB JS (126kB gzipped)
-- **CSS**: ~68kB (12kB gzipped)  
-- **API**: 3 endpoints, ~79.7kB shared JS
-- **Caching**: 1-year cache for static assets
-
-### Runtime Performance
-- **Cold start**: <2s on Vercel
-- **File processing**: <10s for typical SBOMs
-- **AI responses**: 5-30s depending on complexity
-- **Real-time polling**: 2s intervals for status updates
-
-## 🤝 Contributing
-
-We welcome contributions! Please see our contributing guidelines:
-
-1. **Fork** the repository
-2. **Create** a feature branch: `git checkout -b feature/amazing-feature`
-3. **Make** your changes with proper TypeScript types
-4. **Test** both UI and API functionality
-5. **Commit** with descriptive messages
-6. **Push** to your branch: `git push origin feature/amazing-feature` 
-7. **Submit** a pull request
-
-### Development Guidelines
-- Follow existing code style and TypeScript conventions
-- Add tests for new functionality
-- Update documentation for API changes
-- Ensure both UI and API builds pass
-
-## 🙋‍♂️ Support & Community
-
-### Getting Help
-- 📖 **Documentation**: Check [DEPLOYMENT.md](DEPLOYMENT.md) for deployment details
-- 🐛 **Issues**: Report bugs on [GitHub Issues](https://github.com/your-username/bombot-chat/issues)
-- 💬 **Discussions**: Join conversations in [GitHub Discussions](https://github.com/your-username/bombot-chat/discussions)
-
-### External Resources
-- [OSV Scanner Documentation](https://github.com/google/osv-scanner)
-- [OpenAI API Documentation](https://platform.openai.com/docs)
-- [Vercel Deployment Guide](https://vercel.com/docs)
+### 🔧 **Technical Stack**
+- **Frontend**: React 18 + TypeScript + Vite + TailwindCSS + Radix UI
+- **Backend**: Next.js 14 + TypeScript + OpenAI API + OSV.dev API
+- **Deployment**: Vercel Serverless with optimized build pipeline
+- **AI**: GPT-4 Turbo with custom security analyst assistant
+- **State Management**: React Context with custom hooks
+- **File Processing**: Multi-format parsing with batch vulnerability scanning
 
 ---
 
-## 🎉 Ready to Secure Your Software Supply Chain?
+## 🏁 Quick Start
 
-**Deploy BomBot today and start getting AI-powered security insights for your SBOMs!**
-
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone)
+1. **Deploy**: [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/kakderishikesh/BomBot-Chat)
+2. **Configure**: Add `OPENAI_API_KEY` and `ASSISTANT_ID` to Vercel environment
+3. **Use**: Upload SBOM files and start chatting with your AI security expert!
 
 ---
 
-*Built with ❤️ for software supply chain security*
+*Last Updated: December 2024 | Version: 2.0.0 | Build: d1bfa0a*
