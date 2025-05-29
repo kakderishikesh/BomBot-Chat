@@ -1,4 +1,3 @@
-
 import { useState, useRef, useEffect } from 'react';
 import { useChat } from '@/contexts/ChatContext';
 import ChatMessage from '@/components/ChatMessage';
@@ -6,10 +5,10 @@ import FileUploadOverlay from '@/components/FileUploadOverlay';
 import StatusIndicator from '@/components/StatusIndicator';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Shield, Send, Paperclip } from 'lucide-react';
+import { Shield, Send, Paperclip, Plus, MessageSquare } from 'lucide-react';
 
 const ChatInterface = () => {
-  const { messages, isLoading, addMessage } = useChat();
+  const { messages, isLoading, addMessage, clearChat } = useChat();
   const [inputText, setInputText] = useState('');
   const [isDragOver, setIsDragOver] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -152,14 +151,29 @@ const ChatInterface = () => {
     >
       {/* Header */}
       <div className="border-b p-4 bg-white">
-        <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center">
-            <Shield className="h-6 w-6 text-white" />
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center">
+              <Shield className="h-6 w-6 text-white" />
+            </div>
+            <div>
+              <h1 className="text-xl font-semibold text-gray-900">BomBot</h1>
+              <p className="text-sm text-gray-500">Your SBOM security expert</p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-xl font-semibold text-gray-900">BomBot</h1>
-            <p className="text-sm text-gray-500">Your SBOM security expert</p>
-          </div>
+          
+          {/* New Chat Button */}
+          {messages.length > 0 && (
+            <Button
+              onClick={clearChat}
+              variant="outline"
+              size="sm"
+              className="flex items-center space-x-2 text-gray-600 hover:text-gray-900"
+            >
+              <Plus className="h-4 w-4" />
+              <span>New Chat</span>
+            </Button>
+          )}
         </div>
       </div>
 

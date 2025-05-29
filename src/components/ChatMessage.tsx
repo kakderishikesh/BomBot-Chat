@@ -1,4 +1,3 @@
-
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -112,7 +111,7 @@ const ChatMessage = ({ message }: ChatMessageProps) => {
                         variant="ghost"
                         size="sm"
                         className="h-6 w-6 p-0"
-                        onClick={() => window.open(`https://nvd.nist.gov/vuln/detail/${vuln.id}`, '_blank')}
+                        onClick={() => window.open(`https://osv.dev/vulnerability/${vuln.id}`, '_blank')}
                       >
                         <ExternalLink className="h-3 w-3" />
                       </Button>

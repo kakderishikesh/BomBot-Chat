@@ -57,6 +57,7 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
 
   const clearChat = () => {
     setMessages([]);
+    setUploadedFiles([]);
     setCurrentThreadId(null);
   };
 

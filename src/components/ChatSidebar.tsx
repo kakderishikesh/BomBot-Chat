@@ -1,4 +1,3 @@
-
 import { useChat } from '@/contexts/ChatContext';
 import PackageQueryForm from '@/components/PackageQueryForm';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
@@ -128,7 +127,7 @@ const ChatSidebar = () => {
         <CardContent className="text-xs text-gray-600 space-y-2">
           <p>• Drag & drop SBOM files anywhere in the chat</p>
           <p>• Mention package names to get instant security info</p>
-          <p>• Type CVE IDs for detailed vulnerability lookup</p>
+          <p>• Type CVE IDs for OSV database vulnerability lookup</p>
           <p>• Use the paperclip icon to attach files</p>
         </CardContent>
       </Card>
