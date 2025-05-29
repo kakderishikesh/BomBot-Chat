@@ -3,6 +3,8 @@ node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
 
 # Environment variables
 .env*
@@ -17,6 +19,11 @@ yarn-error.log*
 # Next.js
 .next/
 out/
+
+# Vite
+dist
+dist-ssr
+*.local
 
 # TypeScript
 *.tsbuildinfo
@@ -79,11 +86,17 @@ logs
 *.log
 
 # IDE files
-.vscode/
+.vscode/*
+!.vscode/extensions.json
 .idea/
 *.swp
 *.swo
 *~
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
 
 # OS generated files
 .DS_Store
