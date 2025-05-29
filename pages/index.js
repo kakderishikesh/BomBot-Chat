@@ -11,10 +11,11 @@ export async function getServerSideProps({ res }) {
     const htmlPath = join(process.cwd(), 'public', 'dist', 'index.html');
     let htmlContent = readFileSync(htmlPath, 'utf-8');
     
-    // Fix asset paths to point to the correct location
+    // Fix asset paths to point to the correct location with dynamic replacement
+    // Replace all /assets/ references with /dist/assets/
     htmlContent = htmlContent
-      .replace('src="/assets/index-DYrXhPC2.js"', 'src="/dist/assets/index-DYrXhPC2.js"')
-      .replace('href="/assets/index-USeIB3BC.css"', 'href="/dist/assets/index-USeIB3BC.css"');
+      .replace(/src="\/assets\//g, 'src="/dist/assets/')
+      .replace(/href="\/assets\//g, 'href="/dist/assets/');
     
     // Set the content type and send the HTML directly
     res.setHeader('Content-Type', 'text/html');
