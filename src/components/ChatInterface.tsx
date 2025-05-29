@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Shield, Send, Paperclip, Plus, MessageSquare } from 'lucide-react';
 
 const ChatInterface = () => {
-  const { messages, isLoading, addMessage, clearChat, currentThreadId, setLoading } = useChat();
+  const { messages, isLoading, addMessage, clearChat, currentThreadId, setLoading, setCurrentThreadId, addUploadedFile } = useChat();
   const [inputText, setInputText] = useState('');
   const [isDragOver, setIsDragOver] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -46,33 +46,144 @@ const ChatInterface = () => {
     }
   };
 
-  const handleFileUpload = (file: File) => {
+  const handleFileUpload = async (file: File) => {
+    // Validate file type
+    const validTypes = ['.json', '.xml', '.spdx', '.cyclonedx'];
+    const fileExtension = file.name.toLowerCase().substring(file.name.lastIndexOf('.'));
+    
+    if (!validTypes.some(type => fileExtension.includes(type.replace('.', '')))) {
+      addMessage({
+        type: 'assistant',
+        content: '❌ Invalid file type. Please upload a valid SBOM file (.json, .xml, .spdx, .cyclonedx)',
+      });
+      return;
+    }
+
+    // Validate file size (max 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      addMessage({
+        type: 'assistant',
+        content: '❌ File too large. Please upload a file smaller than 10MB',
+      });
+      return;
+    }
+
     // Add file upload message
     addMessage({
       type: 'user',
       content: `📎 Uploaded: ${file.name}`,
     });
 
-    // Simulate file processing
-    setTimeout(() => {
-      addMessage({
-        type: 'assistant',
-        content: `🔍 Scanning ${file.name} with OSV scanner... This may take a moment.`,
-      });
-    }, 500);
+    setLoading(true);
 
-    // Simulate scan results
-    setTimeout(() => {
+    try {
+      // Create FormData for file upload
+      const formData = new FormData();
+      formData.append('file', file);
+
+      // Upload file to API
+      const uploadResponse = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!uploadResponse.ok) {
+        const errorData = await uploadResponse.json();
+        throw new Error(errorData.error || 'Upload failed');
+      }
+
+      const uploadResult = await uploadResponse.json();
+
+      // Add file to context
+      const uploadedFile = {
+        id: uploadResult.threadId || Math.random().toString(36).substr(2, 9),
+        name: file.name,
+        size: file.size,
+        type: file.type,
+        uploadedAt: new Date(),
+        status: 'completed' as const,
+      };
+
+      addUploadedFile(uploadedFile);
+
+      // Set the thread ID for this conversation
+      if (uploadResult.threadId) {
+        setCurrentThreadId(uploadResult.threadId);
+      }
+
+      // Add initial message to chat
       addMessage({
         type: 'assistant',
-        content: `✅ Scan complete for ${file.name}!\n\n**Summary:**\n- Scanned 147 packages\n- Found 3 vulnerabilities\n- 2 High severity, 1 Medium severity\n\n**Top Vulnerabilities:**\n1. **CVE-2023-1234** - High - SQL Injection in mysql-connector\n2. **CVE-2023-5678** - High - RCE in express framework\n3. **CVE-2023-9012** - Medium - XSS in lodash\n\nWould you like me to provide detailed information about any of these vulnerabilities?`,
-        vulnerabilities: [
-          { id: 'CVE-2023-1234', severity: 'High', package: 'mysql-connector', version: '8.0.21', description: 'SQL injection vulnerability in MySQL connector' },
-          { id: 'CVE-2023-5678', severity: 'High', package: 'express', version: '4.17.1', description: 'Remote code execution in Express framework' },
-          { id: 'CVE-2023-9012', severity: 'Medium', package: 'lodash', version: '4.17.20', description: 'Cross-site scripting vulnerability in lodash' },
-        ],
+        content: `✅ Successfully uploaded "${file.name}". I'm now analyzing your SBOM file for security vulnerabilities. This may take a moment...`,
       });
-    }, 3000);
+
+      // Poll for the assistant's response
+      if (uploadResult.runId && uploadResult.threadId) {
+        pollForResponse(uploadResult.threadId, uploadResult.runId, file.name);
+      }
+
+    } catch (error) {
+      console.error('Upload error:', error);
+      addMessage({
+        type: 'assistant',
+        content: `❌ Upload failed: ${error instanceof Error ? error.message : 'There was an error uploading your file. Please try again.'}`,
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const pollForResponse = async (threadId: string, runId: string, fileName: string) => {
+    const maxAttempts = 30; // Maximum polling attempts (30 * 2 seconds = 1 minute)
+    let attempts = 0;
+
+    const poll = async () => {
+      try {
+        const response = await fetch(`/api/run-status?threadId=${threadId}&runId=${runId}`);
+        
+        if (!response.ok) {
+          throw new Error('Failed to check analysis status');
+        }
+
+        const result = await response.json();
+
+        if (result.completed) {
+          if (result.status === 'completed') {
+            // Add the assistant's analysis response
+            addMessage({
+              type: 'assistant',
+              content: result.response || `🔍 Analysis complete for "${fileName}"! The scan has been processed. You can ask me questions about the vulnerabilities found or request specific package information.`,
+            });
+          } else if (result.status === 'failed') {
+            addMessage({
+              type: 'assistant',
+              content: `❌ Analysis failed for "${fileName}". Error: ${result.error || 'Unknown error occurred during analysis.'}`,
+            });
+          }
+          return;
+        }
+
+        // Continue polling if not completed and under max attempts
+        attempts++;
+        if (attempts < maxAttempts) {
+          setTimeout(poll, 2000); // Poll every 2 seconds
+        } else {
+          addMessage({
+            type: 'assistant',
+            content: `⏱️ Analysis for "${fileName}" is taking longer than expected. The scan is still running in the background. You can ask me questions or try uploading the file again.`,
+          });
+        }
+      } catch (error) {
+        console.error('Upload polling error:', error);
+        addMessage({
+          type: 'assistant',
+          content: `⚠️ There was an issue getting the analysis results for "${fileName}".`,
+        });
+      }
+    };
+
+    // Start polling after a short delay
+    setTimeout(poll, 2000);
   };
 
   // Auto-detect packages and CVEs in messages
