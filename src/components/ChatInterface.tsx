@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Shield, Send, Paperclip, Plus, MessageSquare } from 'lucide-react';
 
 const ChatInterface = () => {
-  const { messages, isLoading, addMessage, clearChat } = useChat();
+  const { messages, isLoading, addMessage, clearChat, currentThreadId, setLoading } = useChat();
   const [inputText, setInputText] = useState('');
   const [isDragOver, setIsDragOver] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -93,7 +93,102 @@ const ChatInterface = () => {
     return null;
   };
 
-  const handleSendMessage = () => {
+  // Function to send message to OpenAI Assistant
+  const sendToAssistant = async (message: string) => {
+    if (!currentThreadId) return false;
+
+    try {
+      setLoading(true);
+      
+      // Send message to the existing thread
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          threadId: currentThreadId,
+          message: message
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to send message to assistant');
+      }
+
+      const result = await response.json();
+
+      if (result.runId) {
+        // Poll for the assistant's response
+        pollForAssistantResponse(currentThreadId, result.runId);
+        return true;
+      }
+    } catch (error) {
+      console.error('Error sending to assistant:', error);
+      addMessage({
+        type: 'assistant',
+        content: '⚠️ Sorry, I encountered an issue processing your message. Please try again.',
+      });
+    } finally {
+      setLoading(false);
+    }
+    
+    return false;
+  };
+
+  // Function to poll for assistant response
+  const pollForAssistantResponse = async (threadId: string, runId: string) => {
+    const maxAttempts = 20;
+    let attempts = 0;
+
+    const poll = async () => {
+      try {
+        const response = await fetch(`/api/run-status?threadId=${threadId}&runId=${runId}`);
+        
+        if (!response.ok) {
+          throw new Error('Failed to check assistant response');
+        }
+
+        const result = await response.json();
+
+        if (result.completed) {
+          if (result.status === 'completed' && result.response) {
+            addMessage({
+              type: 'assistant',
+              content: result.response,
+            });
+          } else if (result.status === 'failed') {
+            addMessage({
+              type: 'assistant',
+              content: `❌ I encountered an issue processing your message: ${result.error || 'Unknown error occurred.'}`,
+            });
+          }
+          return;
+        }
+
+        // Continue polling if not completed and under max attempts
+        attempts++;
+        if (attempts < maxAttempts) {
+          setTimeout(poll, 2000);
+        } else {
+          addMessage({
+            type: 'assistant',
+            content: `⏱️ I'm taking longer than expected to process your message. Please try asking again.`,
+          });
+        }
+      } catch (error) {
+        console.error('Assistant polling error:', error);
+        addMessage({
+          type: 'assistant',
+          content: `⚠️ There was an issue getting my response. Please try again.`,
+        });
+      }
+    };
+
+    setTimeout(poll, 1000);
+  };
+
+  const handleSendMessage = async () => {
     if (!inputText.trim()) return;
 
     // Add user message
@@ -102,8 +197,20 @@ const ChatInterface = () => {
       content: inputText,
     });
 
+    const userMessage = inputText;
+    setInputText('');
+
+    // If there's an active thread, send to the real AI assistant
+    if (currentThreadId) {
+      const sent = await sendToAssistant(userMessage);
+      if (sent) {
+        return;
+      }
+    }
+
+    // Fallback to simulated responses (for when there's no active thread)
     // Detect if message contains package or CVE mentions
-    const detection = detectAndQuery(inputText);
+    const detection = detectAndQuery(userMessage);
     
     if (detection) {
       if (detection.type === 'cve') {
@@ -130,8 +237,6 @@ const ChatInterface = () => {
         });
       }, 1000);
     }
-
-    setInputText('');
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
