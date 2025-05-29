@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 
 interface Message {
@@ -26,6 +25,7 @@ interface ChatContextType {
   isLoading: boolean;
   addMessage: (message: Omit<Message, 'id' | 'timestamp'>) => void;
   addUploadedFile: (file: UploadedFile) => void;
+  setCurrentThreadId: (threadId: string | null) => void;
   setLoading: (loading: boolean) => void;
   clearChat: () => void;
 }
@@ -68,6 +68,7 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
       isLoading,
       addMessage,
       addUploadedFile,
+      setCurrentThreadId,
       setLoading,
       clearChat,
     }}>

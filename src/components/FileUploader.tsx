@@ -1,4 +1,3 @@
-
 import React, { useCallback, useRef, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { useChat } from '@/contexts/ChatContext';
@@ -8,7 +7,7 @@ import { toast } from '@/components/ui/use-toast';
 import { Upload, FileText, X, Check } from 'lucide-react';
 
 const FileUploader = () => {
-  const { addUploadedFile, addMessage } = useChat();
+  const { addUploadedFile, addMessage, setCurrentThreadId } = useChat();
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -41,29 +40,32 @@ const FileUploader = () => {
     }
 
     setIsUploading(true);
-    setUploadProgress(0);
+    setUploadProgress(10);
 
     try {
-      // Simulate upload progress
-      const progressInterval = setInterval(() => {
-        setUploadProgress(prev => {
-          if (prev >= 90) {
-            clearInterval(progressInterval);
-            return 90;
-          }
-          return prev + 10;
-        });
-      }, 100);
+      // Create FormData for file upload
+      const formData = new FormData();
+      formData.append('file', file);
 
-      // Simulate file processing
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      clearInterval(progressInterval);
-      setUploadProgress(100);
+      // Upload file to API
+      const uploadResponse = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      setUploadProgress(50);
+
+      if (!uploadResponse.ok) {
+        const errorData = await uploadResponse.json();
+        throw new Error(errorData.error || 'Upload failed');
+      }
+
+      const uploadResult = await uploadResponse.json();
+      setUploadProgress(80);
 
       // Add file to context
       const uploadedFile = {
-        id: Math.random().toString(36).substr(2, 9),
+        id: uploadResult.threadId || Math.random().toString(36).substr(2, 9),
         name: file.name,
         size: file.size,
         type: file.type,
@@ -73,24 +75,25 @@ const FileUploader = () => {
 
       addUploadedFile(uploadedFile);
 
-      // Add success message to chat
+      // Set the thread ID for this conversation
+      if (uploadResult.threadId) {
+        setCurrentThreadId(uploadResult.threadId);
+      }
+
+      setUploadProgress(90);
+
+      // Add initial message to chat
       addMessage({
         type: 'assistant',
         content: `✅ Successfully uploaded "${file.name}". I'm now analyzing your SBOM file for security vulnerabilities. This may take a moment...`,
       });
 
-      // Simulate analysis
-      setTimeout(() => {
-        addMessage({
-          type: 'assistant',
-          content: `🔍 Analysis complete for "${file.name}"!\n\n**Summary:**\n- Scanned 147 packages\n- Found 3 vulnerabilities\n- 2 High severity, 1 Medium severity\n\n**Top Vulnerabilities:**\n1. **CVE-2023-1234** - High - SQL Injection in mysql-connector\n2. **CVE-2023-5678** - High - RCE in express framework\n3. **CVE-2023-9012** - Medium - XSS in lodash\n\nWould you like me to provide detailed information about any of these vulnerabilities?`,
-          vulnerabilities: [
-            { id: 'CVE-2023-1234', severity: 'High', package: 'mysql-connector' },
-            { id: 'CVE-2023-5678', severity: 'High', package: 'express' },
-            { id: 'CVE-2023-9012', severity: 'Medium', package: 'lodash' },
-          ],
-        });
-      }, 2000);
+      // Poll for the assistant's response
+      if (uploadResult.runId && uploadResult.threadId) {
+        pollForResponse(uploadResult.threadId, uploadResult.runId, file.name);
+      }
+
+      setUploadProgress(100);
 
       toast({
         title: 'Upload successful',
@@ -101,14 +104,67 @@ const FileUploader = () => {
       console.error('Upload error:', error);
       toast({
         title: 'Upload failed',
-        description: 'There was an error uploading your file. Please try again.',
+        description: error instanceof Error ? error.message : 'There was an error uploading your file. Please try again.',
         variant: 'destructive',
       });
     } finally {
       setIsUploading(false);
       setTimeout(() => setUploadProgress(0), 1000);
     }
-  }, [addUploadedFile, addMessage]);
+  }, [addUploadedFile, addMessage, setCurrentThreadId]);
+
+  const pollForResponse = async (threadId: string, runId: string, fileName: string) => {
+    const maxAttempts = 30; // Maximum polling attempts (30 * 2 seconds = 1 minute)
+    let attempts = 0;
+
+    const poll = async () => {
+      try {
+        const response = await fetch(`/api/run-status?threadId=${threadId}&runId=${runId}`);
+        
+        if (!response.ok) {
+          throw new Error('Failed to check analysis status');
+        }
+
+        const result = await response.json();
+
+        if (result.completed) {
+          if (result.status === 'completed') {
+            // Add the assistant's analysis response
+            addMessage({
+              type: 'assistant',
+              content: result.response || `🔍 Analysis complete for "${fileName}"! The scan has been processed. You can ask me questions about the vulnerabilities found or request specific package information.`,
+            });
+          } else if (result.status === 'failed') {
+            addMessage({
+              type: 'assistant',
+              content: `❌ Analysis failed for "${fileName}". Error: ${result.error || 'Unknown error occurred during analysis.'}`,
+            });
+          }
+          return;
+        }
+
+        // Continue polling if not completed and under max attempts
+        attempts++;
+        if (attempts < maxAttempts) {
+          setTimeout(poll, 2000); // Poll every 2 seconds
+        } else {
+          addMessage({
+            type: 'assistant',
+            content: `⏱️ Analysis for "${fileName}" is taking longer than expected. The scan is still running in the background. You can ask me questions or try uploading the file again.`,
+          });
+        }
+      } catch (error) {
+        console.error('Polling error:', error);
+        addMessage({
+          type: 'assistant',
+          content: `⚠️ There was an issue checking the analysis status for "${fileName}". You can try asking me questions about the file or re-upload it.`,
+        });
+      }
+    };
+
+    // Start polling after a short delay
+    setTimeout(poll, 2000);
+  };
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
@@ -175,7 +231,11 @@ const FileUploader = () => {
       {isUploading && (
         <div className="space-y-2">
           <div className="flex items-center justify-between text-sm">
-            <span className="text-gray-600">Uploading...</span>
+            <span className="text-gray-600">
+              {uploadProgress < 50 ? 'Uploading...' : 
+               uploadProgress < 90 ? 'Processing...' : 
+               'Analyzing...'}
+            </span>
             <span className="text-gray-900 font-medium">{uploadProgress}%</span>
           </div>
           <Progress value={uploadProgress} className="h-2" />

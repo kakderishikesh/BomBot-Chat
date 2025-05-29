@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useChat } from '@/contexts/ChatContext';
 import { Button } from '@/components/ui/button';
@@ -10,7 +9,7 @@ import { Search, Package } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 
 const PackageQueryForm = () => {
-  const { addMessage, setLoading, isLoading } = useChat();
+  const { addMessage, setLoading, isLoading, currentThreadId } = useChat();
   const [formData, setFormData] = useState({
     packageName: '',
     ecosystem: '',
@@ -20,13 +19,16 @@ const PackageQueryForm = () => {
 
   const ecosystems = [
     { value: 'npm', label: 'npm (Node.js)' },
-    { value: 'pypi', label: 'PyPI (Python)' },
-    { value: 'maven', label: 'Maven (Java)' },
-    { value: 'nuget', label: 'NuGet (.NET)' },
-    { value: 'cargo', label: 'Cargo (Rust)' },
-    { value: 'go', label: 'Go Modules' },
-    { value: 'rubygems', label: 'RubyGems' },
-    { value: 'composer', label: 'Composer (PHP)' }
+    { value: 'PyPI', label: 'PyPI (Python)' },
+    { value: 'Maven', label: 'Maven (Java)' },
+    { value: 'NuGet', label: 'NuGet (.NET)' },
+    { value: 'crates.io', label: 'Cargo (Rust)' },
+    { value: 'Go', label: 'Go Modules' },
+    { value: 'RubyGems', label: 'RubyGems' },
+    { value: 'Packagist', label: 'Composer (PHP)' },
+    { value: 'Hex', label: 'Hex (Erlang/Elixir)' },
+    { value: 'CocoaPods', label: 'CocoaPods (iOS)' },
+    { value: 'SwiftURL', label: 'Swift Package Manager' }
   ];
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -36,6 +38,15 @@ const PackageQueryForm = () => {
       toast({
         title: "Missing information",
         description: "Please provide either a package name or CVE ID",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (formData.packageName && !formData.ecosystem) {
+      toast({
+        title: "Missing ecosystem",
+        description: "Please select an ecosystem when searching by package name",
         variant: "destructive",
       });
       return;
@@ -63,45 +74,115 @@ const PackageQueryForm = () => {
     });
 
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Prepare the request body
+      const requestBody: any = {};
       
-      // Mock response
-      const hasVulnerabilities = Math.random() > 0.5;
-      let responseContent = '';
-      let vulnerabilities = [];
-
       if (formData.cve) {
-        responseContent = `CVE ${formData.cve} is a ${['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'][Math.floor(Math.random() * 4)]} severity vulnerability. It affects several packages in the ecosystem.`;
-        vulnerabilities = [{
-          id: formData.cve,
-          severity: ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'][Math.floor(Math.random() * 4)],
-          package: 'affected-package',
-          version: '1.0.0',
-          description: 'This is a mock vulnerability description for demonstration purposes.'
-        }];
+        requestBody.cve = formData.cve;
       } else {
-        if (hasVulnerabilities) {
-          const vulnCount = Math.floor(Math.random() * 3) + 1;
-          responseContent = `Found ${vulnCount} vulnerabilit${vulnCount > 1 ? 'ies' : 'y'} in ${formData.packageName}${formData.version ? ` version ${formData.version}` : ''}. Here are the details:`;
-          vulnerabilities = Array.from({ length: vulnCount }, (_, i) => ({
-            id: `CVE-2024-${1000 + i}`,
-            severity: ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'][Math.floor(Math.random() * 4)],
-            package: formData.packageName,
-            version: formData.version || '1.0.0',
-            description: `Mock vulnerability ${i + 1} for demonstration purposes.`
-          }));
-        } else {
-          responseContent = `Good news! No known vulnerabilities found in ${formData.packageName}${formData.version ? ` version ${formData.version}` : ''}. The package appears to be secure based on current OSV data.`;
+        requestBody.name = formData.packageName;
+        requestBody.ecosystem = formData.ecosystem;
+        if (formData.version) {
+          requestBody.version = formData.version;
         }
       }
 
-      // Add assistant response
-      addMessage({
-        type: 'assistant',
-        content: responseContent,
-        vulnerabilities: vulnerabilities.length > 0 ? vulnerabilities : undefined,
+      // Include threadId if available for AI assistant integration
+      if (currentThreadId) {
+        requestBody.threadId = currentThreadId;
+      }
+
+      // Call the OSV query API
+      const response = await fetch('/api/osv-query', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody),
       });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Query failed');
+      }
+
+      const result = await response.json();
+
+      // If we have a threadId and the response includes a runId, poll for AI response
+      if (currentThreadId && result.runId) {
+        // Add a loading message
+        addMessage({
+          type: 'assistant',
+          content: `🔍 I found the vulnerability data for ${formData.packageName || formData.cve}. Let me analyze this for you...`,
+        });
+
+        // Poll for the assistant's response
+        pollForAIResponse(currentThreadId, result.runId);
+      } else {
+        // Display raw results if no AI integration
+        const osvData = result.result;
+        let responseContent = '';
+        let vulnerabilities = [];
+
+        if (formData.cve) {
+          // Single CVE response
+          if (osvData) {
+            responseContent = `**CVE Details for ${formData.cve}:**\n\n`;
+            responseContent += `**Summary:** ${osvData.summary || 'No summary available'}\n`;
+            responseContent += `**Severity:** ${osvData.severity?.[0]?.score || 'Not specified'}\n`;
+            responseContent += `**Published:** ${new Date(osvData.published).toLocaleDateString()}\n`;
+            
+            if (osvData.affected && osvData.affected.length > 0) {
+              responseContent += `\n**Affected Packages:**\n`;
+              osvData.affected.forEach((affected: any, index: number) => {
+                responseContent += `${index + 1}. ${affected.package.name} (${affected.package.ecosystem})\n`;
+              });
+            }
+
+            vulnerabilities = [{
+              id: formData.cve,
+              severity: osvData.severity?.[0]?.score || 'Unknown',
+              package: osvData.affected?.[0]?.package.name || 'Multiple',
+              description: osvData.summary || 'No description available'
+            }];
+          } else {
+            responseContent = `CVE ${formData.cve} was not found in the OSV database.`;
+          }
+        } else {
+          // Package query response
+          if (osvData && osvData.vulns && osvData.vulns.length > 0) {
+            const vulnCount = osvData.vulns.length;
+            responseContent = `**Found ${vulnCount} vulnerabilit${vulnCount > 1 ? 'ies' : 'y'} for ${formData.packageName}**\n\n`;
+            
+            osvData.vulns.slice(0, 5).forEach((vuln: any, index: number) => {
+              responseContent += `**${index + 1}. ${vuln.id}**\n`;
+              responseContent += `- Severity: ${vuln.severity?.[0]?.score || 'Not specified'}\n`;
+              responseContent += `- Summary: ${vuln.summary || 'No summary available'}\n\n`;
+            });
+
+            if (vulnCount > 5) {
+              responseContent += `... and ${vulnCount - 5} more vulnerabilities.\n\n`;
+            }
+
+            vulnerabilities = osvData.vulns.map((vuln: any) => ({
+              id: vuln.id,
+              severity: vuln.severity?.[0]?.score || 'Unknown',
+              package: formData.packageName,
+              version: formData.version || 'Multiple',
+              description: vuln.summary || 'No description available'
+            }));
+          } else {
+            responseContent = `✅ **Good news!** No known vulnerabilities found for ${formData.packageName}${formData.version ? ` version ${formData.version}` : ''} in the ${formData.ecosystem} ecosystem.`;
+          }
+        }
+
+        // Add assistant response
+        addMessage({
+          type: 'assistant',
+          content: responseContent,
+          vulnerabilities: vulnerabilities.length > 0 ? vulnerabilities : undefined,
+        });
+      }
 
       toast({
         title: "Query completed",
@@ -109,9 +190,15 @@ const PackageQueryForm = () => {
       });
 
     } catch (error) {
+      console.error('Query error:', error);
+      addMessage({
+        type: 'assistant',
+        content: `❌ **Query failed:** ${error instanceof Error ? error.message : 'Unknown error occurred'}. Please check your input and try again.`,
+      });
+      
       toast({
         title: "Query failed",
-        description: "There was an error processing your query. Please try again.",
+        description: error instanceof Error ? error.message : "There was an error processing your query. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -127,6 +214,59 @@ const PackageQueryForm = () => {
     });
   };
 
+  const pollForAIResponse = async (threadId: string, runId: string) => {
+    const maxAttempts = 20; // Maximum polling attempts
+    let attempts = 0;
+
+    const poll = async () => {
+      try {
+        const response = await fetch(`/api/run-status?threadId=${threadId}&runId=${runId}`);
+        
+        if (!response.ok) {
+          throw new Error('Failed to check analysis status');
+        }
+
+        const result = await response.json();
+
+        if (result.completed) {
+          if (result.status === 'completed' && result.response) {
+            // Add the AI assistant's analysis response
+            addMessage({
+              type: 'assistant',
+              content: result.response,
+            });
+          } else if (result.status === 'failed') {
+            addMessage({
+              type: 'assistant',
+              content: `❌ AI analysis failed: ${result.error || 'Unknown error occurred during analysis.'}`,
+            });
+          }
+          return;
+        }
+
+        // Continue polling if not completed and under max attempts
+        attempts++;
+        if (attempts < maxAttempts) {
+          setTimeout(poll, 2000); // Poll every 2 seconds
+        } else {
+          addMessage({
+            type: 'assistant',
+            content: `⏱️ AI analysis is taking longer than expected. The data has been retrieved from OSV, but detailed analysis is still processing.`,
+          });
+        }
+      } catch (error) {
+        console.error('AI polling error:', error);
+        addMessage({
+          type: 'assistant',
+          content: `⚠️ There was an issue getting the AI analysis, but the vulnerability data has been retrieved successfully.`,
+        });
+      }
+    };
+
+    // Start polling after a short delay
+    setTimeout(poll, 1000);
+  };
+
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-2">
@@ -136,12 +276,17 @@ const PackageQueryForm = () => {
           placeholder="e.g., lodash, express"
           value={formData.packageName}
           onChange={(e) => setFormData(prev => ({ ...prev, packageName: e.target.value }))}
+          disabled={!!formData.cve}
         />
       </div>
 
       <div className="space-y-2">
         <Label htmlFor="ecosystem">Ecosystem</Label>
-        <Select value={formData.ecosystem} onValueChange={(value) => setFormData(prev => ({ ...prev, ecosystem: value }))}>
+        <Select 
+          value={formData.ecosystem} 
+          onValueChange={(value) => setFormData(prev => ({ ...prev, ecosystem: value }))}
+          disabled={!!formData.cve}
+        >
           <SelectTrigger>
             <SelectValue placeholder="Select ecosystem" />
           </SelectTrigger>
@@ -162,6 +307,7 @@ const PackageQueryForm = () => {
           placeholder="e.g., 1.2.3"
           value={formData.version}
           onChange={(e) => setFormData(prev => ({ ...prev, version: e.target.value }))}
+          disabled={!!formData.cve}
         />
       </div>
 
@@ -181,6 +327,7 @@ const PackageQueryForm = () => {
           placeholder="e.g., CVE-2024-1234"
           value={formData.cve}
           onChange={(e) => setFormData(prev => ({ ...prev, cve: e.target.value }))}
+          disabled={!!formData.packageName}
         />
       </div>
 
