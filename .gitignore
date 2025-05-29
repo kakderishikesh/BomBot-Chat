@@ -27,6 +27,7 @@ dist-ssr
 
 # TypeScript
 *.tsbuildinfo
+tsconfig.tsbuildinfo
 
 # Runtime data
 pids
@@ -114,3 +115,19 @@ temp-uploads/
 # test files
 test-*
 test_*
+
+# Security and sensitive files
+*.key
+*.pem
+*.p12
+*.keystore
+*.jks
+
+# Storybook build outputs
+storybook-static
+
+# Local Netlify folder
+.netlify
+
+# Turborepo
+.turbo
