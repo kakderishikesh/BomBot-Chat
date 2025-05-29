@@ -1,25 +1,32 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Enable static file serving from the dist directory
+  // Handle routing for the UI
   async rewrites() {
     return [
-      // Serve UI static files
+      // Serve UI static assets
       {
         source: '/assets/:path*',
         destination: '/dist/assets/:path*',
       },
-      // Serve the main UI app for all non-API routes
+    ];
+  },
+  
+  // Handle routing for all non-API routes to serve the React app
+  async redirects() {
+    return [
       {
-        source: '/((?!api).*)',
+        source: '/',
         destination: '/dist/index.html',
+        permanent: false,
       },
     ];
   },
-  // Copy dist folder to public during build
+
+  // Set headers for static assets
   async headers() {
     return [
       {
-        source: '/dist/:path*',
+        source: '/dist/assets/:path*',
         headers: [
           {
             key: 'Cache-Control',
@@ -29,19 +36,9 @@ const nextConfig = {
       },
     ];
   },
-  // Ensure proper static file handling
+  
+  // Ensure proper trailing slash handling
   trailingSlash: false,
-  // Configure static file serving
-  async redirects() {
-    return [
-      // Redirect root to the UI app
-      {
-        source: '/',
-        destination: '/dist/index.html',
-        permanent: false,
-      },
-    ];
-  },
 };
 
 module.exports = nextConfig; 
