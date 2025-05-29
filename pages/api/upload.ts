@@ -185,6 +185,73 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Create a run with the assistant
     const run = await openai.beta.threads.runs.create(thread.id, {
       assistant_id: process.env.ASSISTANT_ID!,
+      tools: [
+        {
+          type: "function",
+          function: {
+            name: "query_package_vulnerabilities",
+            description: "Query the OSV database for vulnerabilities in a specific package and version",
+            parameters: {
+              type: "object",
+              properties: {
+                name: {
+                  type: "string",
+                  description: "The package name (e.g., 'lodash', 'express')"
+                },
+                ecosystem: {
+                  type: "string",
+                  description: "The package ecosystem (npm, PyPI, Maven, Go, etc.)",
+                  enum: ["npm", "PyPI", "Maven", "Go", "Packagist", "RubyGems", "NuGet", "crates.io", "Hex", "Pub"]
+                },
+                version: {
+                  type: "string",
+                  description: "Optional: specific version to check (e.g., '4.17.20')"
+                }
+              },
+              required: ["name", "ecosystem"]
+            }
+          }
+        },
+        {
+          type: "function",
+          function: {
+            name: "query_cve_details",
+            description: "Get detailed information about a specific CVE from the OSV database",
+            parameters: {
+              type: "object",
+              properties: {
+                cve_id: {
+                  type: "string",
+                  description: "The CVE identifier (e.g., 'CVE-2023-1234')"
+                }
+              },
+              required: ["cve_id"]
+            }
+          }
+        },
+        {
+          type: "function",
+          function: {
+            name: "analyze_sbom_package",
+            description: "Analyze a specific package from the uploaded SBOM data in detail",
+            parameters: {
+              type: "object",
+              properties: {
+                package_name: {
+                  type: "string",
+                  description: "The name of the package to analyze from the SBOM"
+                },
+                include_dependencies: {
+                  type: "boolean",
+                  description: "Whether to include analysis of package dependencies",
+                  default: false
+                }
+              },
+              required: ["package_name"]
+            }
+          }
+        }
+      ]
     });
 
     // Clean up the uploaded file
