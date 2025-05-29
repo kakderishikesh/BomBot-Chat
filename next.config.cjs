@@ -1,23 +1,12 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Handle routing for the UI
+  // Handle routing for static assets
   async rewrites() {
     return [
-      // Serve UI static assets
+      // Map /assets/* to /dist/assets/* where the actual files are
       {
         source: '/assets/:path*',
         destination: '/dist/assets/:path*',
-      },
-    ];
-  },
-  
-  // Handle routing for all non-API routes to serve the React app
-  async redirects() {
-    return [
-      {
-        source: '/',
-        destination: '/dist/index.html',
-        permanent: false,
       },
     ];
   },
