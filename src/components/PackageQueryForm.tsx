@@ -31,6 +31,36 @@ const PackageQueryForm = () => {
     { value: 'SwiftURL', label: 'Swift Package Manager' }
   ];
 
+  // Helper function to extract simple severity from OSV data
+  const extractSeverity = (vuln: any) => {
+    // Try to find CVSS severity first
+    if (vuln.severity && vuln.severity.length > 0) {
+      for (const sev of vuln.severity) {
+        if (sev.type === 'CVSS_V3') {
+          const score = parseFloat(sev.score?.split('/')[0] || '0');
+          if (score >= 9.0) return 'CRITICAL';
+          if (score >= 7.0) return 'HIGH';
+          if (score >= 4.0) return 'MEDIUM';
+          if (score > 0) return 'LOW';
+        }
+      }
+    }
+    
+    // Try database_specific for GHSA severity
+    if (vuln.database_specific?.severity) {
+      return vuln.database_specific.severity.toUpperCase();
+    }
+    
+    // Fallback to parsing from summary or other fields
+    const content = (vuln.summary || vuln.details || '').toUpperCase();
+    if (content.includes('CRITICAL')) return 'CRITICAL';
+    if (content.includes('HIGH')) return 'HIGH';
+    if (content.includes('MEDIUM') || content.includes('MODERATE')) return 'MEDIUM';
+    if (content.includes('LOW')) return 'LOW';
+    
+    return 'Unknown';
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -132,7 +162,7 @@ const PackageQueryForm = () => {
 
           vulnerabilities = [{
             id: formData.cve,
-            severity: osvData.severity?.[0]?.score || 'Unknown',
+            severity: extractSeverity(osvData),
             package: osvData.affected?.[0]?.package.name || 'Multiple',
             version: osvData.affected?.[0]?.ranges?.[0]?.events?.[0]?.introduced || 'Multiple',
             description: osvData.summary || 'No description available'
@@ -160,7 +190,7 @@ const PackageQueryForm = () => {
 
           vulnerabilities = osvData.vulns.map((vuln: any) => ({
             id: vuln.id,
-            severity: vuln.severity?.[0]?.score || 'Unknown',
+            severity: extractSeverity(vuln),
             package: formData.packageName,
             version: formData.version || 'Multiple',
             description: vuln.summary || 'No description available'
@@ -232,6 +262,7 @@ const PackageQueryForm = () => {
             addMessage({
               type: 'assistant',
               content: result.response,
+              useMarkdown: true,
             });
           } else if (result.status === 'failed') {
             addMessage({

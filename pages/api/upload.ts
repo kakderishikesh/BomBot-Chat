@@ -310,7 +310,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 **Scan Data:**
 ${JSON.stringify(scanResults, null, 2)}
 
-Please provide a QUICK summary of the most critical findings with clickable vulnerability links. Keep it brief and actionable. Suggest that I can ask for "executive summary" or "detailed analysis" if I want comprehensive information.`
+Please provide a QUICK summary of the most critical findings with OSV.dev links (NOT NVD links). Use osv.dev format for vulnerability links. Keep it brief and actionable. Suggest that I can ask for "executive summary" or "detailed analysis" if I want comprehensive information.`
     });
 
     // Create a run with the assistant

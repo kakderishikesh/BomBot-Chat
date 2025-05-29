@@ -120,7 +120,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         
         if (cve) {
           const vuln = data as OSVVulnerability;
-          messageContent = `Here are the details for CVE ${cve}:\n\n${JSON.stringify(vuln, null, 2)}\n\nPlease provide a QUICK summary with clickable links. Keep it brief and suggest I can ask for "detailed analysis" if needed.`;
+          messageContent = `Here are the details for CVE ${cve}:\n\n${JSON.stringify(vuln, null, 2)}\n\nPlease provide a QUICK summary with OSV.dev links (NOT NVD links). Use osv.dev format for vulnerability links. Keep it brief and suggest I can ask for "detailed analysis" if needed.`;
         } else {
           const queryResult = data as OSVQueryResponse;
           const vulnCount = queryResult.vulns?.length || 0;
@@ -128,7 +128,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           if (vulnCount === 0) {
             messageContent = `I queried the OSV database for package "${name}" in ecosystem "${ecosystem}"${version ? ` version "${version}"` : ''} and found no known vulnerabilities. ✅ This package appears to be safe!`;
           } else {
-            messageContent = `I found ${vulnCount} vulnerability/vulnerabilities for package "${name}" in ecosystem "${ecosystem}"${version ? ` version "${version}"` : ''}:\n\n${JSON.stringify(queryResult, null, 2)}\n\nPlease provide a QUICK summary with clickable vulnerability links. Keep it brief and suggest I can ask for "detailed analysis" if needed.`;
+            messageContent = `I found ${vulnCount} vulnerability/vulnerabilities for package "${name}" in ecosystem "${ecosystem}"${version ? ` version "${version}"` : ''}:\n\n${JSON.stringify(queryResult, null, 2)}\n\nPlease provide a QUICK summary with OSV.dev links (NOT NVD links). Use osv.dev format for vulnerability links. Keep it brief and suggest I can ask for "detailed analysis" if needed.`;
           }
         }
 
