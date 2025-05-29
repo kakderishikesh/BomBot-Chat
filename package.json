@@ -1,0 +1,30 @@
+{
+  "name": "bombot-backend",
+  "version": "1.0.0",
+  "description": "Serverless Vercel backend for SBOM vulnerability scanning with AI assistant",
+  "main": "index.js",
+  "scripts": {
+    "dev": "vercel dev",
+    "build": "next build",
+    "start": "next start",
+    "type-check": "tsc --noEmit",
+    "deploy": "vercel --prod"
+  },
+  "dependencies": {
+    "formidable": "^3.5.1",
+    "next": "^14.1.0",
+    "openai": "^4.28.4",
+    "tmp": "^0.2.1"
+  },
+  "devDependencies": {
+    "@types/formidable": "^3.4.5",
+    "@types/node": "^20.11.16",
+    "@types/react": "19.1.6",
+    "@types/tmp": "^0.2.6",
+    "@vercel/node": "^2.3.0",
+    "typescript": "^5.3.3"
+  },
+  "engines": {
+    "node": ">=18.x"
+  }
+}
