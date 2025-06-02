@@ -98,7 +98,51 @@ const ChatMessage = ({ message }: ChatMessageProps) => {
                 prose-p:my-2 prose-li:my-0 prose-ul:my-2 prose-ol:my-2
                 prose-h1:mb-2 prose-h2:mb-2 prose-h3:mb-2 prose-h4:mb-1
                 [&>*:first-child]:mt-0 [&>*:last-child]:mb-0">
-                <ReactMarkdown>{message.content}</ReactMarkdown>
+                <ReactMarkdown
+                  components={{
+                    a: ({ href, children, ...props }) => (
+                      <a
+                        href={href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 hover:text-blue-800 underline"
+                        {...props}
+                      >
+                        {children}
+                      </a>
+                    ),
+                    code: ({ inline, className, children, ...props }: any) => {
+                      if (inline) {
+                        return (
+                          <code
+                            className="bg-gray-100 px-1 py-0.5 rounded text-sm font-mono text-gray-800"
+                            {...props}
+                          >
+                            {children}
+                          </code>
+                        );
+                      }
+                      return (
+                        <code
+                          className="block bg-gray-100 p-3 rounded border border-gray-200 text-sm font-mono text-gray-800 whitespace-pre overflow-x-auto"
+                          {...props}
+                        >
+                          {children}
+                        </code>
+                      );
+                    },
+                    pre: ({ children, ...props }) => (
+                      <pre
+                        className="bg-gray-100 p-3 rounded border border-gray-200 text-sm font-mono text-gray-800 whitespace-pre overflow-x-auto"
+                        {...props}
+                      >
+                        {children}
+                      </pre>
+                    ),
+                  }}
+                >
+                  {message.content}
+                </ReactMarkdown>
               </div>
             ) : (
               <div 
