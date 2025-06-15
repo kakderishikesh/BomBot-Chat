@@ -4,6 +4,28 @@ import { Button } from '@/components/ui/button';
 import { User, Shield, AlertTriangle, Info, CheckCircle, Copy, ExternalLink } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import ReactMarkdown from 'react-markdown';
+import DependencyGraph from '@/components/DependencyGraph';
+
+interface DependencyGraphNode {
+  id: string;
+  label: string;
+  version?: string;
+  ecosystem: string;
+  hasVulnerabilities: boolean;
+  vulnerabilityCount: number;
+}
+
+interface DependencyGraphEdge {
+  from: string;
+  to: string;
+  label: string;
+  relationship: string;
+}
+
+interface DependencyGraphData {
+  nodes: DependencyGraphNode[];
+  edges: DependencyGraphEdge[];
+}
 
 interface Message {
   id: string;
@@ -12,6 +34,7 @@ interface Message {
   timestamp: Date;
   vulnerabilities?: any[];
   totalVulnerabilities?: number; // Total count for "X of Y" display
+  dependencyGraph?: DependencyGraphData;
   useMarkdown?: boolean; // Flag to control markdown vs HTML rendering
 }
 
@@ -150,6 +173,13 @@ const ChatMessage = ({ message }: ChatMessageProps) => {
                 className="leading-relaxed whitespace-pre-wrap"
                 dangerouslySetInnerHTML={{ __html: formatContent(message.content) }}
               />
+            )}
+
+            {/* Dependency Graph */}
+            {message.dependencyGraph && message.dependencyGraph.nodes.length > 0 && (
+              <div className="mt-4 pt-3 border-t border-gray-200">
+                <DependencyGraph data={message.dependencyGraph} />
+              </div>
             )}
 
             {/* Vulnerability Cards */}

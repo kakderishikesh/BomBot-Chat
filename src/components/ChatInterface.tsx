@@ -159,6 +159,7 @@ const ChatInterface = () => {
         content: responseContent,
         vulnerabilities: vulnerabilities.length > 0 ? vulnerabilities : undefined,
         totalVulnerabilities: vulnerabilitiesFound > 0 ? quickSummary.totalVulns : undefined,
+        dependencyGraph: uploadResult.dependencyGraph || undefined,
       });
 
       // Thread is already set up for follow-up questions via setCurrentThreadId above

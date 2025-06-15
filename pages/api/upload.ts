@@ -29,6 +29,27 @@ interface DependencyRelationship {
   relationship: string; // Type: 'DEPENDS_ON', 'BUILD_DEPENDS_ON', etc.
 }
 
+interface DependencyGraphNode {
+  id: string;
+  label: string;
+  version?: string;
+  ecosystem: string;
+  hasVulnerabilities: boolean;
+  vulnerabilityCount: number;
+}
+
+interface DependencyGraphEdge {
+  from: string;
+  to: string;
+  label: string;
+  relationship: string;
+}
+
+interface DependencyGraph {
+  nodes: DependencyGraphNode[];
+  edges: DependencyGraphEdge[];
+}
+
 interface OSVVulnerability {
   id: string;
   summary: string;
@@ -241,6 +262,42 @@ function extractSeverity(vuln: any) {
   return 'Unknown';
 }
 
+// Generate dependency graph from packages and dependencies
+function generateDependencyGraph(
+  packages: SBOMPackage[], 
+  dependencies: DependencyRelationship[], 
+  vulnerabilityResults: Array<{ package: SBOMPackage; vulnerabilities: OSVVulnerability[] }>
+): DependencyGraph {
+  const vulnMap = new Map(vulnerabilityResults.map(vr => [vr.package.name, vr.vulnerabilities.length]));
+  
+  // Create nodes for all packages
+  const nodes: DependencyGraphNode[] = packages.map(pkg => ({
+    id: pkg.id || pkg.name,
+    label: pkg.name,
+    version: pkg.version,
+    ecosystem: pkg.ecosystem,
+    hasVulnerabilities: vulnMap.has(pkg.name) && vulnMap.get(pkg.name)! > 0,
+    vulnerabilityCount: vulnMap.get(pkg.name) || 0
+  }));
+
+  // Create edges for dependencies
+  const packageIdMap = new Map(packages.map(pkg => [pkg.id || pkg.name, pkg]));
+  const edges: DependencyGraphEdge[] = dependencies
+    .filter(dep => packageIdMap.has(dep.parent) && packageIdMap.has(dep.child))
+    .map(dep => {
+      const parentPkg = packageIdMap.get(dep.parent)!;
+      const childPkg = packageIdMap.get(dep.child)!;
+      return {
+        from: dep.parent,
+        to: dep.child,
+        label: dep.relationship.replace('_', ' '),
+        relationship: dep.relationship
+      };
+    });
+
+  return { nodes, edges };
+}
+
 // Query OSV API for package vulnerabilities
 async function queryOSVForPackage(pkg: SBOMPackage): Promise<OSVVulnerability[]> {
   try {
@@ -393,6 +450,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const totalVulns = vulnerabilityResults.reduce((sum, result) => sum + result.vulnerabilities.length, 0);
     const vulnPackages = vulnerabilityResults.filter(result => result.vulnerabilities.length > 0).length;
     
+    // Generate dependency graph for visualization
+    const dependencyGraph = generateDependencyGraph(packages, dependencies, vulnerabilityResults);
+
     // Create dependency mapping for easier AI analysis
     const packageMap = new Map(packages.map(pkg => [pkg.id || pkg.name, pkg]));
     const dependencyMap = new Map<string, string[]>();
@@ -549,6 +609,7 @@ Please provide a QUICK summary of the most critical findings with OSV.dev links 
       totalPackages: packages.length,
       vulnerabilitiesFound: totalVulns,
       dependencyRelationships: dependencies.length,
+      dependencyGraph: dependencyGraph,
       quickSummary: {
         packagesWithVulns: vulnPackages,
         totalVulns: totalVulns,

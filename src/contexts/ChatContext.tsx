@@ -1,5 +1,26 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 
+interface DependencyGraphNode {
+  id: string;
+  label: string;
+  version?: string;
+  ecosystem: string;
+  hasVulnerabilities: boolean;
+  vulnerabilityCount: number;
+}
+
+interface DependencyGraphEdge {
+  from: string;
+  to: string;
+  label: string;
+  relationship: string;
+}
+
+interface DependencyGraphData {
+  nodes: DependencyGraphNode[];
+  edges: DependencyGraphEdge[];
+}
+
 interface Message {
   id: string;
   type: 'user' | 'assistant';
@@ -7,6 +28,7 @@ interface Message {
   timestamp: Date;
   vulnerabilities?: any[];
   totalVulnerabilities?: number;
+  dependencyGraph?: DependencyGraphData;
   useMarkdown?: boolean;
 }
 
