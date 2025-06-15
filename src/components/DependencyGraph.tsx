@@ -46,23 +46,24 @@ const DependencyGraph: React.FC<DependencyGraphProps> = ({ data, className = '' 
         label: `${node.label}\n${node.version ? `v${node.version}` : ''}`,
         title: `${node.label}@${node.version || 'unknown'}\nEcosystem: ${node.ecosystem}\nVulnerabilities: ${node.vulnerabilityCount}`,
         color: {
-          background: node.hasVulnerabilities 
-            ? node.vulnerabilityCount >= 3 ? '#ef4444' // red for high vuln count
-            : node.vulnerabilityCount >= 1 ? '#f97316' // orange for some vulns  
-            : '#10b981' // green for safe
-            : '#6b7280', // gray for unknown
-          border: node.hasVulnerabilities ? '#dc2626' : '#374151',
+          background: node.vulnerabilityCount === -1 
+            ? '#6b7280' // gray for not scanned
+            : node.vulnerabilityCount >= 3 ? '#ef4444' // red for high vuln count
+            : node.vulnerabilityCount >= 1 ? '#f97316' // orange for some vulns
+            : '#10b981', // green for scanned with no vulnerabilities
+          border: node.vulnerabilityCount === -1 ? '#374151' : node.hasVulnerabilities ? '#dc2626' : '#10b981',
           font: { color: node.hasVulnerabilities ? 'white' : 'black' }
         },
         font: { size: 12, face: 'Arial' },
         shape: 'box',
-        margin: 8,
+        margin: { top: 8, right: 8, bottom: 8, left: 8 },
         chosen: true
-      }))
+      })) as any
     );
 
     const edges = new DataSet(
-      data.edges.map(edge => ({
+      data.edges.map((edge, index) => ({
+        id: `edge-${index}`,
         from: edge.from,
         to: edge.to,
         label: edge.relationship.replace('_', '\n'),
@@ -70,7 +71,7 @@ const DependencyGraph: React.FC<DependencyGraphProps> = ({ data, className = '' 
         color: { color: '#6b7280' },
         font: { size: 10 },
         smooth: { type: 'continuous' }
-      }))
+      })) as any
     );
 
     const options = {
@@ -102,7 +103,9 @@ const DependencyGraph: React.FC<DependencyGraphProps> = ({ data, className = '' 
         width: 2,
         shadow: true,
         smooth: {
-          type: 'continuous'
+          enabled: true,
+          type: 'continuous',
+          roundness: 0.5
         }
       },
       interaction: {
