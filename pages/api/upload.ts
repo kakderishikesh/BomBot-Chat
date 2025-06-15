@@ -20,6 +20,13 @@ interface SBOMPackage {
   name: string;
   version?: string;
   ecosystem: string;
+  id?: string; // SPDX ID or component reference
+}
+
+interface DependencyRelationship {
+  parent: string; // Package ID or name
+  child: string;  // Dependency ID or name
+  relationship: string; // Type: 'DEPENDS_ON', 'BUILD_DEPENDS_ON', etc.
 }
 
 interface OSVVulnerability {
@@ -66,14 +73,16 @@ interface ScanResult {
   }>;
 }
 
-// Parse SBOM file to extract packages
-function parseSBOMPackages(sbomContent: string, fileName: string): SBOMPackage[] {
+// Parse SBOM file to extract packages and dependencies
+function parseSBOMData(sbomContent: string, fileName: string): { packages: SBOMPackage[], dependencies: DependencyRelationship[] } {
   try {
     const sbom = JSON.parse(sbomContent);
     const packages: SBOMPackage[] = [];
+    const dependencies: DependencyRelationship[] = [];
 
     // Handle SPDX format
     if (sbom.spdxVersion || sbom.SPDXID) {
+      // Parse packages
       if (sbom.packages) {
         sbom.packages.forEach((pkg: any) => {
           if (pkg.name && pkg.name !== 'NOASSERTION') {
@@ -92,7 +101,26 @@ function parseSBOMPackages(sbomContent: string, fileName: string): SBOMPackage[]
             packages.push({
               name: pkg.name,
               version: pkg.versionInfo || pkg.version,
-              ecosystem: ecosystem
+              ecosystem: ecosystem,
+              id: pkg.SPDXID
+            });
+          }
+        });
+      }
+
+      // Parse relationships for dependencies
+      if (sbom.relationships) {
+        sbom.relationships.forEach((rel: any) => {
+          if (rel.relationshipType && (
+            rel.relationshipType === 'DEPENDS_ON' || 
+            rel.relationshipType === 'BUILD_DEPENDS_ON' ||
+            rel.relationshipType === 'DEV_DEPENDS_ON' ||
+            rel.relationshipType === 'RUNTIME_DEPENDS_ON'
+          )) {
+            dependencies.push({
+              parent: rel.spdxElementId,
+              child: rel.relatedSpdxElement,
+              relationship: rel.relationshipType
             });
           }
         });
@@ -100,6 +128,7 @@ function parseSBOMPackages(sbomContent: string, fileName: string): SBOMPackage[]
     }
     // Handle CycloneDX format
     else if (sbom.bomFormat === 'CycloneDX' || sbom.components) {
+      // Parse components
       if (sbom.components) {
         sbom.components.forEach((component: any) => {
           if (component.name && component.purl) {
@@ -121,9 +150,25 @@ function parseSBOMPackages(sbomContent: string, fileName: string): SBOMPackage[]
               packages.push({
                 name: component.name,
                 version: component.version,
-                ecosystem: ecosystemMap[ecosystem] || ecosystem
+                ecosystem: ecosystemMap[ecosystem] || ecosystem,
+                id: component['bom-ref'] || component.purl
               });
             }
+          }
+        });
+      }
+
+      // Parse dependencies from CycloneDX
+      if (sbom.dependencies) {
+        sbom.dependencies.forEach((dep: any) => {
+          if (dep.ref && dep.dependsOn) {
+            dep.dependsOn.forEach((childRef: string) => {
+              dependencies.push({
+                parent: dep.ref,
+                child: childRef,
+                relationship: 'DEPENDS_ON'
+              });
+            });
           }
         });
       }
@@ -136,13 +181,30 @@ function parseSBOMPackages(sbomContent: string, fileName: string): SBOMPackage[]
           packages.push({
             name: pkg.name,
             version: pkg.version,
-            ecosystem: pkg.ecosystem || 'npm' // default to npm
+            ecosystem: pkg.ecosystem || 'npm', // default to npm
+            id: pkg.id || pkg.purl || pkg.name
           });
         }
       });
+
+      // Parse dependencies from generic format
+      if (sbom.dependencyGraph || sbom.relationships) {
+        const depData = sbom.dependencyGraph || sbom.relationships;
+        if (Array.isArray(depData)) {
+          depData.forEach((rel: any) => {
+            if (rel.from && rel.to) {
+              dependencies.push({
+                parent: rel.from,
+                child: rel.to,
+                relationship: rel.type || 'DEPENDS_ON'
+              });
+            }
+          });
+        }
+      }
     }
 
-    return packages;
+    return { packages, dependencies };
   } catch (error) {
     console.error('Error parsing SBOM:', error);
     throw new Error('Invalid SBOM format. Please ensure the file is valid JSON.');
@@ -261,9 +323,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Read and parse SBOM file
     const sbomContent = fs.readFileSync(filePath, 'utf-8');
     let packages: SBOMPackage[];
+    let dependencies: DependencyRelationship[];
     
     try {
-      packages = parseSBOMPackages(sbomContent, fileName);
+      const parsedData = parseSBOMData(sbomContent, fileName);
+      packages = parsedData.packages;
+      dependencies = parsedData.dependencies;
     } catch (parseError) {
       return res.status(400).json({ 
         error: 'Failed to parse SBOM file. Please ensure it follows SPDX or CycloneDX format.',
@@ -328,19 +393,49 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const totalVulns = vulnerabilityResults.reduce((sum, result) => sum + result.vulnerabilities.length, 0);
     const vulnPackages = vulnerabilityResults.filter(result => result.vulnerabilities.length > 0).length;
     
+    // Create dependency mapping for easier AI analysis
+    const packageMap = new Map(packages.map(pkg => [pkg.id || pkg.name, pkg]));
+    const dependencyMap = new Map<string, string[]>();
+    
+    // Build dependency relationships for AI context
+    dependencies.forEach(dep => {
+      const parent = packageMap.get(dep.parent);
+      const child = packageMap.get(dep.child);
+      
+      if (parent && child) {
+        const parentKey = `${parent.name}@${parent.version || 'unknown'}`;
+        if (!dependencyMap.has(parentKey)) {
+          dependencyMap.set(parentKey, []);
+        }
+        dependencyMap.get(parentKey)!.push(`${child.name}@${child.version || 'unknown'} (${dep.relationship})`);
+      }
+    });
+
     await openai.beta.threads.messages.create(thread.id, {
       role: 'user',
-      content: `I've uploaded an SBOM file "${fileName}" with ${packages.length} packages. Here's the vulnerability scan results:
+      content: `I've uploaded an SBOM file "${fileName}" with ${packages.length} packages. Here's the comprehensive analysis data:
 
 **Quick Scan Summary:**
 - Total packages scanned: ${packagesToScan.length}
 - Packages with vulnerabilities: ${vulnPackages}
 - Total vulnerabilities found: ${totalVulns}
+- Dependency relationships found: ${dependencies.length}
 
-**Scan Data:**
+**Vulnerability Scan Data:**
 ${JSON.stringify(scanResults, null, 2)}
 
-Please provide a QUICK summary of the most critical findings with OSV.dev links (NOT NVD links). Use osv.dev format for vulnerability links. Keep it brief and actionable. Suggest that I can ask for "executive summary" or "detailed analysis" if I want comprehensive information.`
+**Package Dependency Information:**
+${JSON.stringify(Object.fromEntries(dependencyMap), null, 2)}
+
+**All Packages in SBOM:**
+${JSON.stringify(packages.map(pkg => ({
+  name: pkg.name,
+  version: pkg.version || 'unknown',
+  ecosystem: pkg.ecosystem,
+  id: pkg.id
+})), null, 2)}
+
+Please provide a QUICK summary of the most critical findings with OSV.dev links (NOT NVD links). Use osv.dev format for vulnerability links. Keep it brief and actionable. Suggest that I can ask for "executive summary", "detailed analysis", or "dependency analysis" for comprehensive information.`
     });
 
     // Create a run with the assistant
@@ -411,6 +506,29 @@ Please provide a QUICK summary of the most critical findings with OSV.dev links 
               required: ["package_name"]
             }
           }
+        },
+        {
+          type: "function",
+          function: {
+            name: "query_package_dependencies",
+            description: "Query dependency relationships for a specific package from the uploaded SBOM",
+            parameters: {
+              type: "object",
+              properties: {
+                package_name: {
+                  type: "string",
+                  description: "The name of the package to query dependencies for"
+                },
+                direction: {
+                  type: "string",
+                  description: "Query direction: 'dependencies' (what this package depends on) or 'dependents' (what depends on this package)",
+                  enum: ["dependencies", "dependents"],
+                  default: "dependencies"
+                }
+              },
+              required: ["package_name"]
+            }
+          }
         }
       ]
     });
@@ -430,9 +548,11 @@ Please provide a QUICK summary of the most critical findings with OSV.dev links 
       packagesScanned: packagesToScan.length,
       totalPackages: packages.length,
       vulnerabilitiesFound: totalVulns,
+      dependencyRelationships: dependencies.length,
       quickSummary: {
         packagesWithVulns: vulnPackages,
         totalVulns: totalVulns,
+        dependenciesFound: dependencies.length,
         topVulnerabilities: vulnerabilityResults
           .filter(result => result.vulnerabilities.length > 0)
           .slice(0, 5)

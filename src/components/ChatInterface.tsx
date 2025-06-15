@@ -121,7 +121,8 @@ const ChatInterface = () => {
         responseContent += `📊 **Overview:**\n`;
         responseContent += `- Packages scanned: ${packagesScanned}\n`;
         responseContent += `- Packages with vulnerabilities: ${quickSummary.packagesWithVulns}\n`;
-        responseContent += `- Total vulnerabilities: ${quickSummary.totalVulns}\n\n`;
+        responseContent += `- Total vulnerabilities: ${quickSummary.totalVulns}\n`;
+        responseContent += `- Dependency relationships: ${quickSummary.dependenciesFound || 0}\n\n`;
 
         if (quickSummary.topVulnerabilities.length > 0) {
           responseContent += `🚨 **Top 5 Vulnerable Packages:**\n`;
@@ -142,7 +143,7 @@ const ChatInterface = () => {
           );
         }
 
-        responseContent += `💡 *Ask me "detailed analysis" or "executive summary" for all ${quickSummary.totalVulns} vulnerabilities and comprehensive remediation guidance*`;
+        responseContent += `💡 *Ask me "detailed analysis", "executive summary", or "dependency analysis" for all ${quickSummary.totalVulns} vulnerabilities and comprehensive security insights*`;
       } else {
         responseContent = `✅ **Good news!** SBOM analysis complete for "${file.name}"\n\n`;
         responseContent += `📊 **Results:**\n`;

@@ -58,6 +58,16 @@ async function executeFunctionCall(functionName: string, args: any, baseUrl: str
           action: "analyze_uploaded_data"
         });
 
+      case 'query_package_dependencies':
+        // This function queries dependency data already in the conversation context
+        // The Assistant will use this to focus on dependency relationships from uploaded SBOM
+        return JSON.stringify({
+          message: `Querying ${args.direction || 'dependencies'} for package '${args.package_name}' from the uploaded SBOM data. Please refer to the package dependency information in our conversation.`,
+          package_name: args.package_name,
+          direction: args.direction || 'dependencies',
+          action: "query_dependency_data"
+        });
+
       default:
         throw new Error(`Unknown function: ${functionName}`);
     }
