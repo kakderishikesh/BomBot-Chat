@@ -117,14 +117,14 @@ const ChatInterface = () => {
       let vulnerabilities = [];
 
       if (vulnerabilitiesFound > 0) {
-        responseContent = `🔍 **SBOM Analysis Complete for "${file.name}"**\n\n`;
-        responseContent += `📊 **Quick Summary:**\n`;
+        responseContent = `🔍 **Quick Summary for "${file.name}"**\n\n`;
+        responseContent += `📊 **Overview:**\n`;
         responseContent += `- Packages scanned: ${packagesScanned}\n`;
         responseContent += `- Packages with vulnerabilities: ${quickSummary.packagesWithVulns}\n`;
         responseContent += `- Total vulnerabilities: ${quickSummary.totalVulns}\n\n`;
 
         if (quickSummary.topVulnerabilities.length > 0) {
-          responseContent += `🚨 **Top Vulnerable Packages:**\n`;
+          responseContent += `🚨 **Top 5 Vulnerable Packages:**\n`;
           quickSummary.topVulnerabilities.forEach((pkg, index) => {
             responseContent += `${index + 1}. **${pkg.package}@${pkg.version}** - ${pkg.vulns.length} issue${pkg.vulns.length > 1 ? 's' : ''}\n`;
           });
@@ -142,7 +142,7 @@ const ChatInterface = () => {
           );
         }
 
-        responseContent += `💡 *Ask me "detailed analysis" or "executive summary" for comprehensive remediation guidance*`;
+        responseContent += `💡 *Ask me "detailed analysis" or "executive summary" for all ${quickSummary.totalVulns} vulnerabilities and comprehensive remediation guidance*`;
       } else {
         responseContent = `✅ **Good news!** SBOM analysis complete for "${file.name}"\n\n`;
         responseContent += `📊 **Results:**\n`;
@@ -157,6 +157,7 @@ const ChatInterface = () => {
         type: 'assistant',
         content: responseContent,
         vulnerabilities: vulnerabilities.length > 0 ? vulnerabilities : undefined,
+        totalVulnerabilities: vulnerabilitiesFound > 0 ? quickSummary.totalVulns : undefined,
       });
 
       // Thread is already set up for follow-up questions via setCurrentThreadId above

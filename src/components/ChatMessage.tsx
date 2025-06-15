@@ -11,6 +11,7 @@ interface Message {
   content: string;
   timestamp: Date;
   vulnerabilities?: any[];
+  totalVulnerabilities?: number; // Total count for "X of Y" display
   useMarkdown?: boolean; // Flag to control markdown vs HTML rendering
 }
 
@@ -155,7 +156,7 @@ const ChatMessage = ({ message }: ChatMessageProps) => {
             {message.vulnerabilities && message.vulnerabilities.length > 0 && (
               <div className="space-y-3 mt-4 pt-3 border-t border-gray-200">
                 <h4 className="font-medium text-gray-900 text-sm">
-                  🛡️ Vulnerabilities Found ({message.vulnerabilities.length})
+                  🛡️ Vulnerabilities {message.vulnerabilities.length} of {message.totalVulnerabilities || message.vulnerabilities.length}
                 </h4>
                 {message.vulnerabilities.map((vuln, index) => (
                   <div key={index} className="bg-white border border-gray-200 rounded-lg p-3 shadow-sm">

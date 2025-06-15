@@ -205,6 +205,7 @@ const PackageQueryForm = () => {
         type: 'assistant',
         content: responseContent,
         vulnerabilities: vulnerabilities.length > 0 ? vulnerabilities : undefined,
+        totalVulnerabilities: vulnerabilities.length > 0 ? vulnerabilities.length : undefined,
       });
 
       // Set up thread for follow-up questions if we got data and have threadId/runId

@@ -6,6 +6,7 @@ interface Message {
   content: string;
   timestamp: Date;
   vulnerabilities?: any[];
+  totalVulnerabilities?: number;
   useMarkdown?: boolean;
 }
 
