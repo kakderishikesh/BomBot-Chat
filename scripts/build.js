@@ -24,7 +24,7 @@ try {
   process.exit(1);
 }
 
-// Step 2: Copy UI build to Next.js public/dist folder
+// Step 2: Copy UI build contents to Next.js public/dist folder
 console.log('📁 Copying UI build to Next.js public folder...');
 const distDir = join(projectRoot, 'dist');
 const publicDistDir = join(projectRoot, 'public', 'dist');
@@ -50,6 +50,12 @@ function copyRecursive(src, dest) {
 
 try {
   if (existsSync(distDir)) {
+    // Remove existing public/dist directory to avoid conflicts
+    if (existsSync(publicDistDir)) {
+      execSync(`rm -rf "${publicDistDir}"`, { cwd: projectRoot });
+    }
+    
+    // Copy the CONTENTS of dist folder, not the dist folder itself
     copyRecursive(distDir, publicDistDir);
     console.log('✅ UI files copied to public/dist');
   } else {
