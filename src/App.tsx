@@ -12,20 +12,19 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
-// Set basename based on deployment context
-const basename = window.location.pathname.startsWith('/dist') ? '/dist' : '/';
-
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <ChatProvider>
       <TooltipProvider>
         <Toaster />
         <Sonner />
-        <BrowserRouter basename={basename}>
+        <BrowserRouter>
           <Layout>
             <Routes>
-              <Route path="/" element={<Index />} />
+              <Route path="/" element={<Chat />} />
               <Route path="/chat" element={<Chat />} />
+              <Route path="/scanner" element={<Chat />} />
+              <Route path="/home" element={<Index />} />
               <Route path="/about" element={<About />} />
               <Route path="*" element={<NotFound />} />
             </Routes>

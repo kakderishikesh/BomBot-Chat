@@ -1,49 +1,90 @@
-import { useEffect } from 'react';
+import { GetServerSideProps } from 'next';
+import { readFileSync, existsSync } from 'fs';
+import { join } from 'path';
 
 export default function Home() {
-  useEffect(() => {
-    // Redirect to the static HTML file
-    window.location.href = '/dist/index.html';
-  }, []);
+  return null; // Content is served via getServerSideProps
+}
 
-  return (
-    <div style={{
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      minHeight: '100vh',
-      fontFamily: 'system-ui',
-      background: '#f8fafc'
-    }}>
-      <div style={{
-        textAlign: 'center',
-        padding: '40px',
-        background: 'white',
-        borderRadius: '12px',
-        boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
-      }}>
-        <h1 style={{ color: '#1e40af', marginBottom: '20px' }}>🤖 BomBot</h1>
-        <p style={{ color: '#6b7280', marginBottom: '20px' }}>Loading application...</p>
-        <div style={{
-          width: '40px',
-          height: '40px',
-          border: '4px solid #e5e7eb',
-          borderTop: '4px solid #3b82f6',
-          borderRadius: '50%',
-          animation: 'spin 1s linear infinite',
-          margin: '0 auto'
-        }}></div>
-        <style jsx>{`
-          @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-          }
-        `}</style>
-        <p style={{ color: '#9ca3af', fontSize: '14px', marginTop: '20px' }}>
-          If this page doesn't redirect automatically, 
-          <a href="/dist/index.html" style={{ color: '#3b82f6', textDecoration: 'none' }}> click here</a>
-        </p>
-      </div>
-    </div>
-  );
-} 
+export const getServerSideProps: GetServerSideProps = async ({ res }) => {
+  try {
+    // Path to the built React app
+    const htmlPath = join(process.cwd(), 'public', 'dist', 'index.html');
+    
+    if (!existsSync(htmlPath)) {
+      throw new Error(`React app not found at ${htmlPath}`);
+    }
+    
+    // Read the HTML content
+    let htmlContent = readFileSync(htmlPath, 'utf-8');
+    
+    // Fix asset paths to point to the correct location
+    htmlContent = htmlContent
+      .replace(/src="\/assets\//g, 'src="/dist/assets/')
+      .replace(/href="\/assets\//g, 'href="/dist/assets/')
+      .replace(/="\/assets\//g, '="/dist/assets/')
+      // Fix favicon references
+      .replace(/href="\/robot\.svg"/g, 'href="/robot.svg"')
+      .replace(/href="\/favicon\.ico"/g, 'href="/favicon.ico"');
+    
+    // Set proper headers
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+    
+    // Send the HTML
+    res.write(htmlContent);
+    res.end();
+    
+    return { props: {} };
+  } catch (error) {
+    console.error('Error serving React app:', error);
+    
+    // Fallback error page
+    const fallbackHtml = `
+      <!DOCTYPE html>
+      <html lang="en">
+        <head>
+          <title>BomBot - Loading Error</title>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1">
+          <style>
+            body { 
+              font-family: system-ui; 
+              display: flex; 
+              align-items: center; 
+              justify-content: center; 
+              min-height: 100vh; 
+              margin: 0; 
+              background: #f8fafc; 
+            }
+            .container { 
+              text-align: center; 
+              padding: 40px; 
+              background: white; 
+              border-radius: 12px; 
+              box-shadow: 0 4px 6px rgba(0,0,0,0.1); 
+            }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <h1 style="color: #1e40af;">🤖 BomBot</h1>
+            <p style="color: #6b7280;">Application loading error. Please refresh the page.</p>
+            <button onclick="window.location.reload()" style="padding: 10px 20px; background: #3b82f6; color: white; border: none; border-radius: 6px; cursor: pointer;">
+              Refresh
+            </button>
+          </div>
+        </body>
+      </html>
+    `;
+    
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.statusCode = 500;
+    res.write(fallbackHtml);
+    res.end();
+    
+    return { props: {} };
+  }
+}; 

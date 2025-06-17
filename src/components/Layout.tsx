@@ -1,4 +1,3 @@
-
 import { ReactNode } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Shield, Menu } from 'lucide-react';
@@ -14,9 +13,9 @@ const Layout = ({ children }: LayoutProps) => {
   const isHomePage = location.pathname === '/';
 
   const navigation = [
-    { name: 'Home', href: '/' },
-    { name: 'Scanner', href: '/chat' },
-    { name: 'About', href: '/about' },
+    // { name: 'Home', href: '/home' },
+    { name: 'Scanner', href: '/' },
+    // { name: 'About', href: '/about' },
   ];
 
   const NavItems = ({ mobile = false }: { mobile?: boolean }) => (
