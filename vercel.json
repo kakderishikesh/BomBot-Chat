@@ -3,48 +3,10 @@
   "buildCommand": "npm run build",
   "installCommand": "npm install",
   "outputDirectory": ".next",
-  "functions": {
-    "pages/api/chat.ts": {
-      "maxDuration": 30
-    },
-    "pages/api/upload.ts": {
-      "maxDuration": 30
-    },
-    "pages/api/osv-query.ts": {
-      "maxDuration": 30
-    },
-    "pages/api/run-status.ts": {
-      "maxDuration": 30
-    }
-  },
   "rewrites": [
-    {
-      "source": "/dist/(.*)",
-      "destination": "/dist/$1"
-    },
     {
       "source": "/assets/(.*)",
       "destination": "/dist/assets/$1"
-    }
-  ],
-  "headers": [
-    {
-      "source": "/dist/(.*)",
-      "headers": [
-        {
-          "key": "Cache-Control",
-          "value": "public, max-age=31536000, immutable"
-        }
-      ]
-    },
-    {
-      "source": "/(.*\\.(?:js|css|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot))",
-      "headers": [
-        {
-          "key": "Cache-Control",
-          "value": "public, max-age=31536000, immutable"
-        }
-      ]
     }
   ]
 } 
