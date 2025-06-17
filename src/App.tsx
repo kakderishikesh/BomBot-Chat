@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -13,13 +12,16 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
+// Set basename based on deployment context
+const basename = window.location.pathname.startsWith('/dist') ? '/dist' : '/';
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <ChatProvider>
       <TooltipProvider>
         <Toaster />
         <Sonner />
-        <BrowserRouter>
+        <BrowserRouter basename={basename}>
           <Layout>
             <Routes>
               <Route path="/" element={<Index />} />
