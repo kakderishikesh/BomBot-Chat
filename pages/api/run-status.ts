@@ -1,5 +1,6 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { OpenAI } from 'openai';
+import { supabaseServer } from '@/lib/supabase-server';
 
 const openai = new OpenAI({ 
   apiKey: process.env.OPENAI_API_KEY! 
@@ -8,6 +9,8 @@ const openai = new OpenAI({
 interface RunStatusRequest {
   threadId: string;
   runId: string;
+  sessionId?: string;
+  messageIndex?: number;
 }
 
 // Function to execute function calls
@@ -82,7 +85,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(405).json({ error: 'Method Not Allowed' });
   }
 
-  const { threadId, runId } = req.query as { threadId: string; runId: string };
+  const { threadId, runId, sessionId, messageIndex } = req.query as { 
+    threadId: string; 
+    runId: string; 
+    sessionId?: string; 
+    messageIndex?: string; 
+  };
 
   if (!threadId || !runId) {
     return res.status(400).json({ 
@@ -159,6 +167,23 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       let responseText = '';
       if (assistantMessage && assistantMessage.content[0].type === 'text') {
         responseText = assistantMessage.content[0].text.value;
+      }
+
+      // Log AI response to Supabase if sessionId and messageIndex are provided
+      if (sessionId && messageIndex && responseText) {
+        try {
+          await supabaseServer
+            .from('chat_logs')
+            .update({
+              ai_response: responseText,
+              updated_at: new Date().toISOString(),
+            })
+            .eq('session_id', sessionId)
+            .eq('message_index', parseInt(messageIndex));
+        } catch (logError) {
+          console.error('Error logging AI response:', logError);
+          // Continue even if logging fails
+        }
       }
 
       return res.status(200).json({

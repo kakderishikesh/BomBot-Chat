@@ -1,4 +1,6 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
+import { v4 as uuidv4 } from 'uuid';
+import { ChatLogger } from '@/lib/chatLogger';
 
 interface DependencyGraphNode {
   id: string;
@@ -46,12 +48,22 @@ interface ChatContextType {
   messages: Message[];
   uploadedFiles: UploadedFile[];
   currentThreadId: string | null;
+  sessionId: string;
+  messageIndex: number;
   isLoading: boolean;
   addMessage: (message: Omit<Message, 'id' | 'timestamp'>) => void;
   addUploadedFile: (file: UploadedFile) => void;
   setCurrentThreadId: (threadId: string | null) => void;
   setLoading: (loading: boolean) => void;
   clearChat: () => void;
+  logChatMessage: (
+    messageType: 'user' | 'assistant' | 'file_upload',
+    userMessage?: string,
+    aiResponse?: string,
+    fileName?: string,
+    fileSize?: number,
+    vulnerabilityCount?: number
+  ) => Promise<void>;
 }
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
@@ -60,7 +72,17 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
   const [currentThreadId, setCurrentThreadId] = useState<string | null>(null);
+  const [sessionId] = useState<string>(() => uuidv4());
+  const [messageIndex, setMessageIndex] = useState<number>(0);
   const [isLoading, setIsLoading] = useState(false);
+
+  // Initialize session on component mount
+  useEffect(() => {
+    const initSession = async () => {
+      await ChatLogger.initializeSession(sessionId);
+    };
+    initSession();
+  }, [sessionId]);
 
   const addMessage = (message: Omit<Message, 'id' | 'timestamp'>) => {
     const newMessage: Message = {
@@ -69,6 +91,7 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
       timestamp: new Date(),
     };
     setMessages(prev => [...prev, newMessage]);
+    setMessageIndex(prev => prev + 1);
   };
 
   const addUploadedFile = (file: UploadedFile) => {
@@ -83,6 +106,32 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
     setMessages([]);
     setUploadedFiles([]);
     setCurrentThreadId(null);
+    setMessageIndex(0);
+  };
+
+  const logChatMessage = async (
+    messageType: 'user' | 'assistant' | 'file_upload',
+    userMessage?: string,
+    aiResponse?: string,
+    fileName?: string,
+    fileSize?: number,
+    vulnerabilityCount?: number
+  ) => {
+    try {
+      await ChatLogger.logMessage({
+        sessionId,
+        threadId: currentThreadId,
+        messageIndex,
+        messageType,
+        userMessage,
+        aiResponse,
+        fileName,
+        fileSize,
+        vulnerabilityCount,
+      });
+    } catch (error) {
+      console.error('Error logging chat message:', error);
+    }
   };
 
   return (
@@ -90,12 +139,15 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
       messages,
       uploadedFiles,
       currentThreadId,
+      sessionId,
+      messageIndex,
       isLoading,
       addMessage,
       addUploadedFile,
       setCurrentThreadId,
       setLoading,
       clearChat,
+      logChatMessage,
     }}>
       {children}
     </ChatContext.Provider>

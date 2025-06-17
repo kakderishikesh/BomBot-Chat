@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Shield, Send, Paperclip, Plus, MessageSquare } from 'lucide-react';
 
 const ChatInterface = () => {
-  const { messages, isLoading, addMessage, clearChat, currentThreadId, setLoading, setCurrentThreadId, addUploadedFile } = useChat();
+  const { messages, isLoading, addMessage, clearChat, currentThreadId, sessionId, messageIndex, setLoading, setCurrentThreadId, addUploadedFile, logChatMessage } = useChat();
   const [inputText, setInputText] = useState('');
   const [isDragOver, setIsDragOver] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -80,6 +80,8 @@ const ChatInterface = () => {
       // Create FormData for file upload
       const formData = new FormData();
       formData.append('file', file);
+      formData.append('sessionId', sessionId);
+      formData.append('messageIndex', messageIndex.toString());
 
       // Upload file to API
       const uploadResponse = await fetch('/api/upload', {
@@ -261,7 +263,9 @@ const ChatInterface = () => {
         },
         body: JSON.stringify({
           threadId: currentThreadId,
-          message: message
+          message: message,
+          sessionId,
+          messageIndex,
         }),
       });
 
@@ -296,7 +300,7 @@ const ChatInterface = () => {
 
     const poll = async () => {
       try {
-        const response = await fetch(`/api/run-status?threadId=${threadId}&runId=${runId}`);
+        const response = await fetch(`/api/run-status?threadId=${threadId}&runId=${runId}&sessionId=${sessionId}&messageIndex=${messageIndex}`);
         
         if (!response.ok) {
           throw new Error('Failed to check assistant response');

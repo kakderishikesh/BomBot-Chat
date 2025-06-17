@@ -1,5 +1,7 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { OpenAI } from 'openai';
+import { supabaseServer } from '@/lib/supabase-server';
+import { v4 as uuidv4 } from 'uuid';
 
 const openai = new OpenAI({ 
   apiKey: process.env.OPENAI_API_KEY! 
@@ -8,6 +10,8 @@ const openai = new OpenAI({
 interface ChatRequest {
   message: string;
   threadId: string;
+  sessionId: string;
+  messageIndex: number;
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -15,15 +19,38 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(405).json({ error: 'Method Not Allowed' });
   }
 
-  const { message, threadId }: ChatRequest = req.body;
+  const { message, threadId, sessionId, messageIndex }: ChatRequest = req.body;
 
-  if (!message || !threadId) {
+  if (!message || !threadId || !sessionId || messageIndex === undefined) {
     return res.status(400).json({ 
-      error: 'Message and threadId are required' 
+      error: 'Message, threadId, sessionId, and messageIndex are required' 
     });
   }
 
   try {
+    // Log user message to Supabase
+    try {
+      await supabaseServer
+        .from('chat_logs')
+        .insert([{
+          id: uuidv4(),
+          session_id: sessionId,
+          thread_id: threadId,
+          message_index: messageIndex,
+          message_type: 'user',
+          user_message: message,
+          ai_response: null,
+          file_name: null,
+          file_size: null,
+          vulnerability_count: null,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        }]);
+    } catch (logError) {
+      console.error('Error logging user message:', logError);
+      // Continue with the chat even if logging fails
+    }
+
     // Send the message to the existing thread
     await openai.beta.threads.messages.create(threadId, {
       role: 'user',
@@ -39,7 +66,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       success: true,
       runId: run.id,
       threadId: threadId,
-      message: message
+      message: message,
+      sessionId: sessionId,
+      messageIndex: messageIndex
     });
 
   } catch (error) {

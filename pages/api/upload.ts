@@ -4,6 +4,8 @@ import { NextApiRequest, NextApiResponse } from 'next';
 import { OpenAI } from 'openai';
 import tmp from 'tmp';
 import path from 'path';
+import { supabaseServer } from '@/lib/supabase-server';
+import { v4 as uuidv4 } from 'uuid';
 
 export const config = {
   api: {
@@ -371,6 +373,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const filePath = file.filepath;
     const fileName = file.originalFilename || 'uploaded-sbom';
+    
+    // Extract session and message info from fields
+    const sessionId = Array.isArray(fields.sessionId) ? fields.sessionId[0] : fields.sessionId;
+    const messageIndex = Array.isArray(fields.messageIndex) ? 
+      parseInt(fields.messageIndex[0]) : 
+      parseInt(fields.messageIndex || '0');
 
     // Validate file type (basic check for SBOM files)
     const validExtensions = ['.json', '.xml', '.spdx', '.cyclonedx'];
@@ -598,6 +606,31 @@ Please provide a QUICK summary of the most critical findings with OSV.dev links 
       ]
     });
 
+    // Log file upload to Supabase if session info is provided
+    if (sessionId && messageIndex !== undefined) {
+      try {
+        await supabaseServer
+          .from('chat_logs')
+          .insert([{
+            id: uuidv4(),
+            session_id: sessionId,
+            thread_id: thread.id,
+            message_index: messageIndex,
+            message_type: 'file_upload',
+            user_message: `Uploaded SBOM file: ${fileName}`,
+            ai_response: null,
+            file_name: fileName,
+            file_size: file.size,
+            vulnerability_count: totalVulns,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          }]);
+      } catch (logError) {
+        console.error('Error logging file upload:', logError);
+        // Continue even if logging fails
+      }
+    }
+
     // Clean up the uploaded file
     try {
       fs.unlinkSync(filePath);
@@ -615,6 +648,8 @@ Please provide a QUICK summary of the most critical findings with OSV.dev links 
       vulnerabilitiesFound: totalVulns,
       dependencyRelationships: dependencies.length,
       dependencyGraph: dependencyGraph,
+      sessionId: sessionId,
+      messageIndex: messageIndex,
       quickSummary: {
         packagesWithVulns: vulnPackages,
         totalVulns: totalVulns,
