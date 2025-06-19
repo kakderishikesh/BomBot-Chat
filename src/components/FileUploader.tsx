@@ -114,7 +114,7 @@ const FileUploader = () => {
   }, [addUploadedFile, addMessage, setCurrentThreadId]);
 
   const pollForResponse = async (threadId: string, runId: string, fileName: string) => {
-    const maxAttempts = 30; // Maximum polling attempts (30 * 2 seconds = 1 minute)
+    const maxAttempts = 90; // Maximum polling attempts (90 * 2 seconds = 3 minutes)
     let attempts = 0;
 
     const poll = async () => {

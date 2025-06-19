@@ -11,6 +11,7 @@ interface OSVQueryRequest {
   ecosystem?: string;
   cve?: string;
   threadId?: string;
+  userEmail?: string;
 }
 
 interface OSVVulnerability {
@@ -55,7 +56,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(405).json({ error: 'Method Not Allowed' });
   }
 
-  const { version, name, ecosystem, cve, threadId }: OSVQueryRequest = req.body;
+  const { version, name, ecosystem, cve, threadId, userEmail }: OSVQueryRequest = req.body;
 
   if (!cve && (!name || !ecosystem)) {
     return res.status(400).json({ 

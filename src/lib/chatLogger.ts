@@ -11,6 +11,7 @@ export interface LogChatMessageParams {
   fileName?: string | null;
   fileSize?: number | null;
   vulnerabilityCount?: number | null;
+  userEmail?: string | null;
 }
 
 export class ChatLogger {
@@ -29,6 +30,7 @@ export class ChatLogger {
         file_name: params.fileName || null,
         file_size: params.fileSize || null,
         vulnerability_count: params.vulnerabilityCount || null,
+        user_email: params.userEmail || null,
         session_started_at: now, // Will be overridden by trigger if not first message
         session_last_activity: now,
         created_at: now,

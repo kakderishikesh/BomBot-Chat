@@ -9,7 +9,7 @@ import { Search } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 
 const PackageQueryForm = () => {
-  const { addMessage, setLoading, isLoading, currentThreadId, setCurrentThreadId } = useChat();
+  const { addMessage, setLoading, isLoading, currentThreadId, setCurrentThreadId, userEmail } = useChat();
   const [formData, setFormData] = useState({
     packageName: '',
     ecosystem: '',
@@ -120,6 +120,11 @@ const PackageQueryForm = () => {
       // Include threadId if available for AI assistant integration
       if (currentThreadId) {
         requestBody.threadId = currentThreadId;
+      }
+
+      // Include userEmail if available
+      if (userEmail) {
+        requestBody.userEmail = userEmail;
       }
 
       // Call the OSV query API
@@ -244,7 +249,7 @@ const PackageQueryForm = () => {
   };
 
   const pollForAIResponse = async (threadId: string, runId: string) => {
-    const maxAttempts = 20; // Maximum polling attempts
+    const maxAttempts = 180; // Maximum polling attempts (180 * 1 second = 3 minutes)
     let attempts = 0;
 
     const poll = async () => {

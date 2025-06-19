@@ -379,6 +379,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const messageIndex = Array.isArray(fields.messageIndex) ? 
       parseInt(fields.messageIndex[0]) : 
       parseInt(fields.messageIndex || '0');
+    const userEmail = Array.isArray(fields.userEmail) ? fields.userEmail[0] : fields.userEmail;
 
     // Validate file type (basic check for SBOM files)
     const validExtensions = ['.json', '.xml', '.spdx', '.cyclonedx'];
@@ -412,9 +413,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
     }
 
-    // Query OSV for vulnerabilities (limit to first 50 packages to avoid timeout)
-    console.log(`Scanning ${Math.min(packages.length, 50)} packages for vulnerabilities...`);
-    const packagesToScan = packages.slice(0, 50);
+    // Query OSV for vulnerabilities (limit to first 150 packages to avoid timeout)
+    console.log(`Scanning ${Math.min(packages.length, 150)} packages for vulnerabilities...`);
+    const packagesToScan = packages.slice(0, 150);
     const vulnerabilityResults: Array<{
       package: SBOMPackage;
       vulnerabilities: OSVVulnerability[];
@@ -622,6 +623,7 @@ Please provide a QUICK summary of the most critical findings with OSV.dev links 
             file_name: fileName,
             file_size: file.size,
             vulnerability_count: totalVulns,
+            user_email: userEmail,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
           }]);

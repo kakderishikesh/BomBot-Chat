@@ -17,6 +17,7 @@ export interface ChatLog {
   file_name: string | null;
   file_size: number | null;
   vulnerability_count: number | null;
+  user_email: string | null;
   session_started_at: string;
   session_last_activity: string;
   created_at: string;
@@ -25,6 +26,7 @@ export interface ChatLog {
 
 export interface SessionAnalytics {
   session_id: string;
+  user_email: string | null;
   session_started_at: string;
   session_last_activity: string;
   total_messages: number;

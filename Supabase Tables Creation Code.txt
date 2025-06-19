@@ -1,0 +1,103 @@
+-- Drop existing tables and views if they exist
+-- DROP VIEW IF EXISTS session_analytics;
+-- DROP TABLE IF EXISTS chat_logs;
+
+-- Enable UUID extension
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
+-- Create the main chat_logs table
+CREATE TABLE chat_logs (
+    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    session_id VARCHAR(255) NOT NULL,
+    thread_id VARCHAR(255),
+    message_index INTEGER NOT NULL,
+    message_type VARCHAR(20) CHECK (message_type IN ('user', 'assistant', 'file_upload')) NOT NULL,
+    user_message TEXT,
+    ai_response TEXT,
+    file_name VARCHAR(255),
+    file_size BIGINT,
+    vulnerability_count INTEGER,
+    user_email VARCHAR(255),
+    session_started_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    session_last_activity TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
+);
+
+-- Create indexes for optimal performance
+CREATE INDEX idx_chat_logs_session_id ON chat_logs(session_id);
+CREATE INDEX idx_chat_logs_thread_id ON chat_logs(thread_id);
+CREATE INDEX idx_chat_logs_user_email ON chat_logs(user_email);
+CREATE INDEX idx_chat_logs_message_type ON chat_logs(message_type);
+CREATE INDEX idx_chat_logs_session_activity ON chat_logs(session_last_activity DESC);
+CREATE INDEX idx_chat_logs_created_at ON chat_logs(created_at DESC);
+CREATE INDEX idx_chat_logs_session_message ON chat_logs(session_id, message_index);
+
+-- Create function to auto-update timestamps
+CREATE OR REPLACE FUNCTION update_session_activity()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.session_last_activity = NOW();
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$$ language 'plpgsql';
+
+-- Create trigger to auto-update session activity and updated_at
+CREATE TRIGGER update_session_activity_trigger
+    BEFORE INSERT OR UPDATE ON chat_logs
+    FOR EACH ROW
+    EXECUTE FUNCTION update_session_activity();
+
+-- Enable Row Level Security (RLS)
+ALTER TABLE chat_logs ENABLE ROW LEVEL SECURITY;
+
+-- Create policy to allow all operations (internal app)
+CREATE POLICY "Enable all operations for chat_logs" ON chat_logs
+    FOR ALL USING (true) WITH CHECK (true);
+
+-- Create session analytics view for survey analysis
+CREATE VIEW session_analytics AS
+SELECT 
+    session_id,
+    user_email,
+    MIN(session_started_at) as session_started_at,
+    MAX(session_last_activity) as session_last_activity,
+    COUNT(*) as total_messages,
+    COUNT(CASE WHEN message_type = 'user' THEN 1 END) as user_messages,
+    COUNT(CASE WHEN message_type = 'assistant' THEN 1 END) as assistant_messages,
+    COUNT(CASE WHEN message_type = 'file_upload' THEN 1 END) as file_uploads,
+    SUM(CASE WHEN vulnerability_count IS NOT NULL THEN vulnerability_count ELSE 0 END) as total_vulnerabilities_found,
+    EXTRACT(EPOCH FROM (MAX(session_last_activity) - MIN(session_started_at))) / 60 as session_duration_minutes,
+    MAX(created_at) as last_message_at
+FROM chat_logs
+GROUP BY session_id, user_email
+ORDER BY MAX(session_last_activity) DESC;
+
+-- Create survey participants view for easy tracking
+CREATE VIEW survey_participants AS
+SELECT 
+    user_email,
+    COUNT(DISTINCT session_id) as total_sessions,
+    COUNT(*) as total_interactions,
+    SUM(CASE WHEN message_type = 'file_upload' THEN 1 ELSE 0 END) as files_uploaded,
+    SUM(CASE WHEN vulnerability_count IS NOT NULL THEN vulnerability_count ELSE 0 END) as total_vulnerabilities_found,
+    MIN(created_at) as first_interaction,
+    MAX(created_at) as last_interaction,
+    EXTRACT(EPOCH FROM (MAX(created_at) - MIN(created_at))) / 60 as total_time_minutes
+FROM chat_logs 
+WHERE user_email IS NOT NULL
+GROUP BY user_email
+ORDER BY total_interactions DESC;
+
+
+
+-- Add helpful comments
+COMMENT ON TABLE chat_logs IS 'Stores all chat interactions, file uploads, and survey participant data for BomBot';
+COMMENT ON COLUMN chat_logs.user_email IS 'Email address collected from survey participants for tracking their usage';
+COMMENT ON COLUMN chat_logs.session_id IS 'Unique identifier for each user session';
+COMMENT ON COLUMN chat_logs.thread_id IS 'OpenAI thread ID for AI conversations';
+COMMENT ON COLUMN chat_logs.vulnerability_count IS 'Number of vulnerabilities found in uploaded SBOM files';
+
+COMMENT ON VIEW session_analytics IS 'Aggregated session data grouped by session and email for analysis';
+COMMENT ON VIEW survey_participants IS 'Summary of survey participant activity for research analysis';

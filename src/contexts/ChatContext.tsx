@@ -51,10 +51,12 @@ interface ChatContextType {
   sessionId: string;
   messageIndex: number;
   isLoading: boolean;
+  userEmail: string | null;
   addMessage: (message: Omit<Message, 'id' | 'timestamp'>) => void;
   addUploadedFile: (file: UploadedFile) => void;
   setCurrentThreadId: (threadId: string | null) => void;
   setLoading: (loading: boolean) => void;
+  setUserEmail: (email: string) => void;
   clearChat: () => void;
   logChatMessage: (
     messageType: 'user' | 'assistant' | 'file_upload',
@@ -75,13 +77,20 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
   const [sessionId] = useState<string>(() => uuidv4());
   const [messageIndex, setMessageIndex] = useState<number>(0);
   const [isLoading, setIsLoading] = useState(false);
+  const [userEmail, setUserEmailState] = useState<string | null>(null);
 
-  // Initialize session on component mount
+  // Initialize session and check for stored email on component mount
   useEffect(() => {
     const initSession = async () => {
       await ChatLogger.initializeSession(sessionId);
     };
     initSession();
+
+    // Check for stored email in localStorage
+    const storedEmail = localStorage.getItem('bombot-user-email');
+    if (storedEmail) {
+      setUserEmailState(storedEmail);
+    }
   }, [sessionId]);
 
   const addMessage = (message: Omit<Message, 'id' | 'timestamp'>) => {
@@ -100,6 +109,12 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
 
   const setLoading = (loading: boolean) => {
     setIsLoading(loading);
+  };
+
+  const setUserEmail = (email: string) => {
+    setUserEmailState(email);
+    // Store email in localStorage for persistence
+    localStorage.setItem('bombot-user-email', email);
   };
 
   const clearChat = () => {
@@ -142,10 +157,12 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
       sessionId,
       messageIndex,
       isLoading,
+      userEmail,
       addMessage,
       addUploadedFile,
       setCurrentThreadId,
       setLoading,
+      setUserEmail,
       clearChat,
       logChatMessage,
     }}>

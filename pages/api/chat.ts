@@ -12,6 +12,7 @@ interface ChatRequest {
   threadId: string;
   sessionId: string;
   messageIndex: number;
+  userEmail?: string;
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -19,7 +20,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(405).json({ error: 'Method Not Allowed' });
   }
 
-  const { message, threadId, sessionId, messageIndex }: ChatRequest = req.body;
+  const { message, threadId, sessionId, messageIndex, userEmail }: ChatRequest = req.body;
 
   if (!message || !threadId || !sessionId || messageIndex === undefined) {
     return res.status(400).json({ 
@@ -30,7 +31,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   try {
     // Log user message to Supabase
     try {
-      await supabaseServer
+              await supabaseServer
         .from('chat_logs')
         .insert([{
           id: uuidv4(),
@@ -43,6 +44,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           file_name: null,
           file_size: null,
           vulnerability_count: null,
+          user_email: userEmail,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         }]);

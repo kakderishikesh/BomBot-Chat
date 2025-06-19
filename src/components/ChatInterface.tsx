@@ -3,16 +3,26 @@ import { useChat } from '@/contexts/ChatContext';
 import ChatMessage from '@/components/ChatMessage';
 import FileUploadOverlay from '@/components/FileUploadOverlay';
 import StatusIndicator from '@/components/StatusIndicator';
+import EmailCollectionDialog from '@/components/EmailCollectionDialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Shield, Send, Paperclip, Plus, MessageSquare } from 'lucide-react';
 
 const ChatInterface = () => {
-  const { messages, isLoading, addMessage, clearChat, currentThreadId, sessionId, messageIndex, setLoading, setCurrentThreadId, addUploadedFile, logChatMessage } = useChat();
+  const { messages, isLoading, addMessage, clearChat, currentThreadId, sessionId, messageIndex, setLoading, setCurrentThreadId, addUploadedFile, logChatMessage, userEmail, setUserEmail } = useChat();
   const [inputText, setInputText] = useState('');
   const [isDragOver, setIsDragOver] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Check if email dialog should be shown
+  const shouldShowEmailDialog = !userEmail;
+
+  // Handle email submission
+  const handleEmailSubmit = (email: string) => {
+    setUserEmail(email);
+    console.log('User email collected for survey:', email);
+  };
 
   // Auto-scroll to bottom on new messages
   useEffect(() => {
@@ -82,6 +92,9 @@ const ChatInterface = () => {
       formData.append('file', file);
       formData.append('sessionId', sessionId);
       formData.append('messageIndex', messageIndex.toString());
+      if (userEmail) {
+        formData.append('userEmail', userEmail);
+      }
 
       // Upload file to API
       const uploadResponse = await fetch('/api/upload', {
@@ -178,7 +191,7 @@ const ChatInterface = () => {
   };
 
   const pollForResponse = async (threadId: string, runId: string, fileName: string) => {
-    const maxAttempts = 30; // Maximum polling attempts (30 * 2 seconds = 1 minute)
+    const maxAttempts = 90; // Maximum polling attempts (90 * 2 seconds = 3 minutes)
     let attempts = 0;
 
     const poll = async () => {
@@ -266,6 +279,7 @@ const ChatInterface = () => {
           message: message,
           sessionId,
           messageIndex,
+          userEmail,
         }),
       });
 
@@ -295,7 +309,7 @@ const ChatInterface = () => {
 
   // Function to poll for assistant response
   const pollForAssistantResponse = async (threadId: string, runId: string) => {
-    const maxAttempts = 20;
+    const maxAttempts = 180; // Maximum polling attempts (180 * 1 second = 3 minutes)
     let attempts = 0;
 
     const poll = async () => {
@@ -534,6 +548,12 @@ const ChatInterface = () => {
 
       {/* File Upload Overlay */}
       {isDragOver && <FileUploadOverlay />}
+      
+      {/* Email Collection Dialog */}
+      <EmailCollectionDialog 
+        isOpen={shouldShowEmailDialog}
+        onEmailSubmit={handleEmailSubmit}
+      />
       
       {/* Hidden file input */}
       <input

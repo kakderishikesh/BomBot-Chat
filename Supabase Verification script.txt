@@ -1,0 +1,106 @@
+-- ========================================
+-- BOMBOT DATABASE VERIFICATION SCRIPT
+-- ========================================
+
+-- 1. Check if chat_logs table exists and show its structure
+SELECT 'TABLE STRUCTURE: chat_logs' as verification_step;
+SELECT 
+    column_name,
+    data_type,
+    is_nullable,
+    column_default
+FROM information_schema.columns 
+WHERE table_name = 'chat_logs' 
+ORDER BY ordinal_position;
+
+-- 2. Check indexes on chat_logs table
+SELECT 'INDEXES: chat_logs' as verification_step;
+SELECT 
+    indexname,
+    indexdef
+FROM pg_indexes 
+WHERE tablename = 'chat_logs'
+ORDER BY indexname;
+
+-- 3. Check if views exist
+SELECT 'VIEWS: Checking if views exist' as verification_step;
+SELECT 
+    table_name as view_name,
+    table_type
+FROM information_schema.tables 
+WHERE table_schema = 'public' 
+AND table_name IN ('session_analytics', 'survey_participants')
+ORDER BY table_name;
+
+-- 4. Check triggers on chat_logs
+SELECT 'TRIGGERS: chat_logs' as verification_step;
+SELECT 
+    trigger_name,
+    event_manipulation,
+    action_timing
+FROM information_schema.triggers 
+WHERE event_object_table = 'chat_logs';
+
+-- 5. Check if functions exist
+SELECT 'FUNCTIONS: Checking if functions exist' as verification_step;
+SELECT 
+    routine_name,
+    routine_type
+FROM information_schema.routines 
+WHERE routine_schema = 'public' 
+AND routine_name IN ('update_session_activity', 'cleanup_old_sessions')
+ORDER BY routine_name;
+
+-- 6. Check RLS (Row Level Security) status
+SELECT 'RLS STATUS: chat_logs' as verification_step;
+SELECT 
+    tablename,
+    rowsecurity
+FROM pg_tables 
+WHERE tablename = 'chat_logs';
+
+-- 7. Check RLS policies
+SELECT 'RLS POLICIES: chat_logs' as verification_step;
+SELECT 
+    policyname,
+    permissive,
+    roles,
+    cmd
+FROM pg_policies 
+WHERE tablename = 'chat_logs';
+
+-- 8. Test data insertion (optional - will rollback)
+SELECT 'DATA TEST: Testing insert capability' as verification_step;
+BEGIN;
+INSERT INTO chat_logs (
+    session_id, 
+    message_index, 
+    message_type, 
+    user_message, 
+    user_email
+) VALUES (
+    'test-session-123',
+    1,
+    'user',
+    'Test message',
+    'test@example.com'
+);
+SELECT 'Test insert: SUCCESS' as result;
+ROLLBACK;
+
+-- 9. Summary count
+SELECT 'SUMMARY: Table row count' as verification_step;
+SELECT COUNT(*) as total_rows FROM chat_logs;
+
+-- 10. Show sample from views (if any data exists)
+SELECT 'VIEW TEST: session_analytics structure' as verification_step;
+SELECT column_name, data_type 
+FROM information_schema.columns 
+WHERE table_name = 'session_analytics' 
+ORDER BY ordinal_position;
+
+SELECT 'VIEW TEST: survey_participants structure' as verification_step;
+SELECT column_name, data_type 
+FROM information_schema.columns 
+WHERE table_name = 'survey_participants' 
+ORDER BY ordinal_position;
