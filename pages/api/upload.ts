@@ -380,6 +380,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       parseInt(fields.messageIndex[0]) : 
       parseInt(fields.messageIndex || '0');
     const userEmail = Array.isArray(fields.userEmail) ? fields.userEmail[0] : fields.userEmail;
+    const existingThreadId = Array.isArray(fields.threadId) ? fields.threadId[0] : fields.threadId;
 
     // Validate file type (basic check for SBOM files)
     const validExtensions = ['.json', '.xml', '.spdx', '.cyclonedx'];
@@ -457,8 +458,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }]
     };
 
-    // Create a thread with the OpenAI Assistant
-    const thread = await openai.beta.threads.create();
+    // Use existing thread if available, otherwise create a new one
+    let threadId: string;
+    if (existingThreadId) {
+      threadId = existingThreadId;
+      console.log(`Reusing existing thread: ${threadId} for SBOM upload`);
+    } else {
+      const thread = await openai.beta.threads.create();
+      threadId = thread.id;
+      console.log(`Created new thread: ${threadId} for SBOM upload`);
+    }
 
     // Send the scan results to the assistant
     const totalVulns = vulnerabilityResults.reduce((sum, result) => sum + result.vulnerabilities.length, 0);
@@ -485,9 +494,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
     });
 
-    await openai.beta.threads.messages.create(thread.id, {
+    await openai.beta.threads.messages.create(threadId, {
       role: 'user',
-      content: `I've uploaded an SBOM file "${fileName}" with ${packages.length} packages. Here's the comprehensive analysis data:
+      content: `I've uploaded ${existingThreadId ? 'an additional' : 'an'} SBOM file "${fileName}" with ${packages.length} packages${existingThreadId ? ' for comparison with the previous SBOM(s)' : ''}. Here's the comprehensive analysis data:
 
 **Quick Scan Summary:**
 - Total packages scanned: ${packagesToScan.length}
@@ -509,11 +518,13 @@ ${JSON.stringify(packages.map(pkg => ({
   id: pkg.id
 })), null, 2)}
 
-Please provide a QUICK summary of the most critical findings with OSV.dev links (NOT NVD links). Use osv.dev format for vulnerability links. Keep it brief and actionable. Suggest that I can ask for "executive summary", "detailed analysis", or "dependency analysis" for comprehensive information.`
+${existingThreadId ? 
+  'Please provide a QUICK summary of the most critical findings with OSV.dev links (NOT NVD links). Since this is an additional SBOM, you can also compare it with previously uploaded SBOMs. Use osv.dev format for vulnerability links. Keep it brief and actionable. Suggest that I can ask for "executive summary", "detailed analysis", "dependency analysis", or "SBOM comparison" for comprehensive information.' :
+  'Please provide a QUICK summary of the most critical findings with OSV.dev links (NOT NVD links). Use osv.dev format for vulnerability links. Keep it brief and actionable. Suggest that I can ask for "executive summary", "detailed analysis", or "dependency analysis" for comprehensive information.'}`
     });
 
     // Create a run with the assistant
-    const run = await openai.beta.threads.runs.create(thread.id, {
+    const run = await openai.beta.threads.runs.create(threadId, {
       assistant_id: process.env.ASSISTANT_ID!,
       tools: [
         {
@@ -615,7 +626,7 @@ Please provide a QUICK summary of the most critical findings with OSV.dev links 
           .insert([{
             id: uuidv4(),
             session_id: sessionId,
-            thread_id: thread.id,
+            thread_id: threadId,
             message_index: messageIndex,
             message_type: 'file_upload',
             user_message: `Uploaded SBOM file: ${fileName}`,
@@ -643,7 +654,7 @@ Please provide a QUICK summary of the most critical findings with OSV.dev links 
     res.status(200).json({ 
       success: true,
       runId: run.id, 
-      threadId: thread.id,
+      threadId: threadId,
       fileName: fileName,
       packagesScanned: packagesToScan.length,
       totalPackages: packages.length,

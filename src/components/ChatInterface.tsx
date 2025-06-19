@@ -95,6 +95,10 @@ const ChatInterface = () => {
       if (userEmail) {
         formData.append('userEmail', userEmail);
       }
+      // Include existing threadId if available to maintain conversation continuity
+      if (currentThreadId) {
+        formData.append('threadId', currentThreadId);
+      }
 
       // Upload file to API
       const uploadResponse = await fetch('/api/upload', {

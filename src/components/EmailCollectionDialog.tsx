@@ -103,10 +103,10 @@ const EmailCollectionDialog: React.FC<EmailCollectionDialogProps> = ({
         <div className="space-y-6">
           <div className="text-sm text-gray-600">
             <p className="mb-2">
-              Welcome to the BomBot security analysis survey! To participate, please provide your email address as specified in the survey instructions.
+              Welcome to the BomBot! To use the service, please provide your email address as specified in the survey.
             </p>
             <p className="text-xs text-gray-500">
-              Your email will be used solely for tracking survey responses and will not be shared with third parties.
+              Please verify your email before accessing BomBot.
             </p>
           </div>
 
@@ -195,8 +195,7 @@ const EmailCollectionDialog: React.FC<EmailCollectionDialogProps> = ({
 
           <div className="text-xs text-gray-500 border-t pt-4">
             <p>
-              By proceeding, you agree to participate in the BomBot security analysis survey. 
-              Your interactions will be recorded for research purposes.
+              BomBot v1.0.0
             </p>
           </div>
         </div>

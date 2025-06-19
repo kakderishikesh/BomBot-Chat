@@ -7,7 +7,7 @@ import { toast } from '@/components/ui/use-toast';
 import { Upload, FileText, X, Check } from 'lucide-react';
 
 const FileUploader = () => {
-  const { addUploadedFile, addMessage, setCurrentThreadId } = useChat();
+  const { addUploadedFile, addMessage, setCurrentThreadId, currentThreadId } = useChat();
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -46,6 +46,11 @@ const FileUploader = () => {
       // Create FormData for file upload
       const formData = new FormData();
       formData.append('file', file);
+      
+      // Include existing threadId if available to maintain conversation continuity
+      if (currentThreadId) {
+        formData.append('threadId', currentThreadId);
+      }
 
       // Upload file to API
       const uploadResponse = await fetch('/api/upload', {
@@ -111,7 +116,7 @@ const FileUploader = () => {
       setIsUploading(false);
       setTimeout(() => setUploadProgress(0), 1000);
     }
-  }, [addUploadedFile, addMessage, setCurrentThreadId]);
+  }, [addUploadedFile, addMessage, setCurrentThreadId, currentThreadId]);
 
   const pollForResponse = async (threadId: string, runId: string, fileName: string) => {
     const maxAttempts = 90; // Maximum polling attempts (90 * 2 seconds = 3 minutes)
