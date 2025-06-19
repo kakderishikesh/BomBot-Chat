@@ -414,7 +414,7 @@ const ChatInterface = () => {
       setTimeout(() => {
         addMessage({
           type: 'assistant',
-          content: "Please enter your message again. It seems like the system thinks your query isn't related to the Security, SBOMs, etc. Rephrase your query, if possible",
+          content: "Please wait for 3 seconds before sending your message. The SBOM information is being passed to the AI.",
         });
       }, 1000);
     }
