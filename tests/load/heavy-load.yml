@@ -1,0 +1,98 @@
+config:
+  target: '{{ $processEnvironment.TARGET_URL || "http://localhost:3000" }}'
+  phases:
+    - duration: 120 # 2 minute ramp-up
+      arrivalRate: 1
+      rampTo: 25
+      name: "Ramp up to heavy load"
+    - duration: 600 # 10 minutes sustained heavy load
+      arrivalRate: 25 # 25 new users every second (VERY HIGH)
+      name: "Heavy load - Stress test"
+    - duration: 120 # 2 minute ramp-down
+      arrivalRate: 25
+      rampTo: 1
+      name: "Ramp down"
+  defaults:
+    headers:
+      User-Agent: 'BomBot-LoadTest-Heavy/1.0'
+      Content-Type: 'application/json'
+    timeout: 30 # 30 second timeout for requests
+  payload:
+    - path: "./test-data/sample-emails.csv"
+      fields:
+        - email
+    - path: "./test-data/test-packages.csv"
+      fields:
+        - packageName
+        - ecosystem
+        - version
+
+scenarios:
+  - name: "High Frequency API Calls"
+    weight: 60
+    flow:
+      # Rapid-fire API requests
+      - post:
+          url: "/api/osv-query"
+          json:
+            name: "{{ packageName }}"
+            ecosystem: "{{ ecosystem }}"
+            userEmail: "{{ email }}"
+          expect:
+            - statusCode: [200, 429, 500, 503] # Include rate limit and server errors
+      - think: 0.1 # Very short think time
+      
+      - post:
+          url: "/api/osv-query"
+          json:
+            cve: "CVE-2023-26136"
+            userEmail: "{{ email }}"
+          expect:
+            - statusCode: [200, 429, 500, 503]
+      - think: 0.1
+
+  - name: "Concurrent Chat Sessions"
+    weight: 25
+    flow:
+      # Simulate multiple chat messages in quick succession
+      - post:
+          url: "/api/chat"
+          json:
+            message: "What are the security implications?"
+            threadId: "stress-test-{{ $uuid }}"
+            sessionId: "stress-session-{{ $uuid }}"
+            messageIndex: 1
+            userEmail: "{{ email }}"
+          expect:
+            - statusCode: [200, 400, 429, 500, 503]
+      - think: 0.5
+      
+      - post:
+          url: "/api/chat"
+          json:
+            message: "Show me detailed analysis"
+            threadId: "stress-test-{{ $uuid }}"
+            sessionId: "stress-session-{{ $uuid }}"
+            messageIndex: 2
+            userEmail: "{{ email }}"
+          expect:
+            - statusCode: [200, 400, 429, 500, 503]
+
+  - name: "Frontend Bombardment"
+    weight: 15
+    flow:
+      # Rapid page loads
+      - get:
+          url: "/"
+          expect:
+            - statusCode: [200, 429, 500, 503]
+      - think: 0.1
+      - get:
+          url: "/chat"
+          expect:
+            - statusCode: [200, 429, 500, 503]
+      - think: 0.1
+      - get:
+          url: "/about"
+          expect:
+            - statusCode: [200, 404, 429, 500, 503] # 404 is ok if page doesn't exist 

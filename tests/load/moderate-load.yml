@@ -1,0 +1,111 @@
+config:
+  target: '{{ $processEnvironment.TARGET_URL || "http://localhost:3000" }}'
+  phases:
+    - duration: 60 # 1 minute ramp-up
+      arrivalRate: 1
+      rampTo: 10
+      name: "Ramp up"
+    - duration: 300 # 5 minutes sustained load
+      arrivalRate: 10 # 10 new users every second
+      name: "Moderate load - Sustained traffic"
+    - duration: 60 # 1 minute ramp-down
+      arrivalRate: 10
+      rampTo: 1
+      name: "Ramp down"
+  defaults:
+    headers:
+      User-Agent: 'BomBot-LoadTest-Moderate/1.0'
+      Content-Type: 'application/json'
+  payload:
+    - path: "./test-data/sample-emails.csv"
+      fields:
+        - email
+    - path: "./test-data/test-packages.csv"
+      fields:
+        - packageName
+        - ecosystem
+        - version
+
+scenarios:
+  - name: "Complete User Journey"
+    weight: 50
+    flow:
+      # 1. Load homepage
+      - get:
+          url: "/"
+      - think: 2
+      
+      # 2. Navigate to chat
+      - get:
+          url: "/chat"
+      - think: 1
+      
+      # 3. Query a package
+      - post:
+          url: "/api/osv-query"
+          json:
+            name: "{{ packageName }}"
+            ecosystem: "{{ ecosystem }}"
+            version: "{{ version }}"
+            userEmail: "{{ email }}"
+          capture:
+            - json: "$.threadId"
+              as: "threadId"
+            - json: "$.runId"
+              as: "runId"
+      - think: 2
+      
+      # 4. Check run status if we got threadId
+      - loop:
+          count: 5
+          over:
+            - get:
+                url: "/api/run-status"
+                qs:
+                  threadId: "{{ threadId }}"
+                  runId: "{{ runId }}"
+                ifTrue: "threadId"
+            - think: 2
+
+  - name: "API Heavy Usage"
+    weight: 30
+    flow:
+      # Multiple quick API calls
+      - post:
+          url: "/api/osv-query"
+          json:
+            name: "express"
+            ecosystem: "npm"
+            userEmail: "{{ email }}"
+      - think: 0.5
+      
+      - post:
+          url: "/api/osv-query"
+          json:
+            cve: "CVE-2023-26136"
+            userEmail: "{{ email }}"
+      - think: 0.5
+      
+      - post:
+          url: "/api/osv-query"
+          json:
+            name: "lodash"
+            ecosystem: "npm"
+            version: "4.17.20"
+            userEmail: "{{ email }}"
+
+  - name: "Chat Simulation"
+    weight: 20
+    flow:
+      # Simulate chat interaction (requires existing thread)
+      - post:
+          url: "/api/chat"
+          json:
+            message: "What are the most critical vulnerabilities?"
+            threadId: "thread_placeholder"
+            sessionId: "load-test-session-{{ $uuid }}"
+            messageIndex: 1
+            userEmail: "{{ email }}"
+          expect:
+            - statusCode: [200, 400] # 400 is ok if no valid thread
+      - think: 3 

@@ -1,0 +1,52 @@
+config:
+  target: '{{ $processEnvironment.TARGET_URL || "http://localhost:3000" }}'
+  phases:
+    - duration: 120 # 2 minutes
+      arrivalRate: 2 # 2 new users every second
+      name: "Light load - Basic functionality"
+  defaults:
+    headers:
+      User-Agent: 'BomBot-LoadTest/1.0'
+  payload:
+    - path: "./test-data/sample-emails.csv"
+      fields:
+        - email
+
+scenarios:
+  - name: "Frontend Page Load"
+    weight: 40
+    flow:
+      - get:
+          url: "/"
+      - think: 2 # Wait 2 seconds
+      - get:
+          url: "/chat"
+
+  - name: "Package Query - Simple"
+    weight: 30
+    flow:
+      - post:
+          url: "/api/osv-query"
+          json:
+            name: "lodash"
+            ecosystem: "npm"
+            userEmail: "{{ email }}"
+      - think: 1
+
+  - name: "CVE Query"
+    weight: 20
+    flow:
+      - post:
+          url: "/api/osv-query"
+          json:
+            cve: "CVE-2023-26136"
+            userEmail: "{{ email }}"
+      - think: 1
+
+  - name: "Health Check"
+    weight: 10
+    flow:
+      - get:
+          url: "/api/health"
+          expect:
+            - statusCode: [200, 404] # 404 is ok if endpoint doesn't exist 

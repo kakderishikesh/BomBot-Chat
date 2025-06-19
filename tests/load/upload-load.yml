@@ -1,0 +1,67 @@
+config:
+  target: '{{ $processEnvironment.TARGET_URL || "http://localhost:3000" }}'
+  phases:
+    - duration: 180 # 3 minutes - slower for uploads
+      arrivalRate: 1 # 1 upload every second (heavy for file processing)
+      name: "SBOM Upload Load Test"
+  defaults:
+    headers:
+      User-Agent: 'BomBot-UploadTest/1.0'
+  payload:
+    - path: "./test-data/sample-emails.csv"
+      fields:
+        - email
+
+scenarios:
+  - name: "SBOM File Upload"
+    weight: 100
+    flow:
+      # 1. Load the chat page first
+      - get:
+          url: "/chat"
+      - think: 2
+      
+      # 2. Upload SBOM file (multipart/form-data)
+      - post:
+          url: "/api/upload"
+          formData:
+            file: "./test-data/sample-sbom.json"
+            sessionId: "load-test-session-{{ $uuid }}"
+            messageIndex: "1"
+            userEmail: "{{ email }}"
+          capture:
+            - json: "$.threadId"
+              as: "uploadThreadId"
+            - json: "$.runId"
+              as: "uploadRunId"
+          expect:
+            - statusCode: [200, 400, 413] # 400 for bad files, 413 for too large
+      - think: 5 # Wait for processing to start
+      
+      # 3. Poll for upload results (up to 2 minutes)
+      - loop:
+          count: 40 # 40 attempts * 3 seconds = 2 minutes max
+          over:
+            - get:
+                url: "/api/run-status"
+                qs:
+                  threadId: "{{ uploadThreadId }}"
+                  runId: "{{ uploadRunId }}"
+                ifTrue: "uploadThreadId"
+                expect:
+                  - statusCode: [200, 404]
+            - think: 3 # Wait 3 seconds between polls
+
+  - name: "Upload Error Handling"
+    weight: 0 # Disabled by default - enable for error testing
+    flow:
+      # Test invalid file upload
+      - post:
+          url: "/api/upload"
+          formData:
+            file: "./test-data/invalid-file.txt"
+            sessionId: "error-test-{{ $uuid }}"
+            messageIndex: "1"
+            userEmail: "{{ email }}"
+          expect:
+            - statusCode: [400, 415] # Should reject invalid files 

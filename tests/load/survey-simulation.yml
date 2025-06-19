@@ -1,0 +1,198 @@
+config:
+  target: '{{ $processEnvironment.TARGET_URL || "https://bombot.vercel.app" }}'
+  phases:
+    - duration: 60 # 1 minute ramp-up
+      arrivalRate: 0.5 # Start slowly, 30 users over 1 minute
+      rampTo: 4.5 # Ramp to ~4.5 users/second
+      name: "Survey participants joining"
+    - duration: 300 # 5 minutes sustained activity
+      arrivalRate: 4.5 # Maintain ~4.5 new users/second for sustained 30 concurrent
+      name: "Active survey period - 30 concurrent users"
+    - duration: 60 # 1 minute ramp-down
+      arrivalRate: 4.5
+      rampTo: 0.5
+      name: "Survey completion"
+  defaults:
+    headers:
+      User-Agent: 'BomBot-Survey-Test/1.0'
+      Content-Type: 'application/json'
+    timeout: 45 # Extended timeout for production
+  payload:
+    - path: "./test-data/sample-emails.csv"
+      fields:
+        - email
+    - path: "./test-data/test-packages.csv"
+      fields:
+        - packageName
+        - ecosystem
+        - version
+
+scenarios:
+  - name: "Survey User Journey - SBOM Upload"
+    weight: 40
+    flow:
+      # 1. User arrives and sees email dialog
+      - get:
+          url: "/"
+          expect:
+            - statusCode: 200
+      - think: 3 # Time to read and enter email
+      
+      # 2. Navigate to chat after email entry
+      - get:
+          url: "/chat"
+          expect:
+            - statusCode: 200
+      - think: 2
+      
+      # 3. Upload SBOM file (primary survey task)
+      - post:
+          url: "/api/upload"
+          formData:
+            file: "./test-data/sample-sbom.json"
+            sessionId: "survey-session-{{ $uuid }}"
+            messageIndex: "1"
+            userEmail: "{{ email }}"
+          capture:
+            - json: "$.threadId"
+              as: "uploadThreadId"
+            - json: "$.runId"
+              as: "uploadRunId"
+          expect:
+            - statusCode: [200, 400]
+      - think: 5 # Wait for initial processing
+      
+      # 4. Poll for SBOM analysis results
+      - loop:
+          count: 20 # Poll for up to 40 seconds
+          over:
+            - get:
+                url: "/api/run-status"
+                qs:
+                  threadId: "{{ uploadThreadId }}"
+                  runId: "{{ uploadRunId }}"
+                  sessionId: "survey-session-{{ $uuid }}"
+                  messageIndex: "1"
+                ifTrue: "uploadThreadId"
+                expect:
+                  - statusCode: [200, 404]
+            - think: 2
+      
+      # 5. Ask follow-up questions (typical survey behavior)
+      - post:
+          url: "/api/chat"
+          json:
+            message: "What are the most critical vulnerabilities?"
+            threadId: "{{ uploadThreadId }}"
+            sessionId: "survey-session-{{ $uuid }}"
+            messageIndex: 2
+            userEmail: "{{ email }}"
+          ifTrue: "uploadThreadId"
+          expect:
+            - statusCode: [200, 400, 429]
+      - think: 10 # Time to read AI response
+
+  - name: "Survey User Journey - Package Query"
+    weight: 35
+    flow:
+      # 1. User arrives
+      - get:
+          url: "/"
+          expect:
+            - statusCode: 200
+      - think: 2
+      
+      # 2. Navigate to chat
+      - get:
+          url: "/chat"
+          expect:
+            - statusCode: 200
+      - think: 1
+      
+      # 3. Query specific packages (alternative survey path)
+      - post:
+          url: "/api/osv-query"
+          json:
+            name: "{{ packageName }}"
+            ecosystem: "{{ ecosystem }}"
+            version: "{{ version }}"
+            userEmail: "{{ email }}"
+          capture:
+            - json: "$.threadId"
+              as: "queryThreadId"
+            - json: "$.runId"
+              as: "queryRunId"
+          expect:
+            - statusCode: [200, 400, 429]
+      - think: 3
+      
+      # 4. Query CVE if we got a thread
+      - post:
+          url: "/api/osv-query"
+          json:
+            cve: "CVE-2023-26136"
+            threadId: "{{ queryThreadId }}"
+            userEmail: "{{ email }}"
+          ifTrue: "queryThreadId"
+          expect:
+            - statusCode: [200, 400, 429]
+      - think: 5
+      
+      # 5. Ask AI about the results
+      - post:
+          url: "/api/chat"
+          json:
+            message: "How serious are these vulnerabilities?"
+            threadId: "{{ queryThreadId }}"
+            sessionId: "survey-query-{{ $uuid }}"
+            messageIndex: 1
+            userEmail: "{{ email }}"
+          ifTrue: "queryThreadId"
+          expect:
+            - statusCode: [200, 400, 429]
+      - think: 8
+
+  - name: "Survey User Journey - Quick Exploration"
+    weight: 25
+    flow:
+      # 1. User briefly explores the interface
+      - get:
+          url: "/"
+          expect:
+            - statusCode: 200
+      - think: 5 # Reading homepage
+      
+      - get:
+          url: "/chat"
+          expect:
+            - statusCode: 200
+      - think: 3
+      
+      # 2. Quick package check
+      - post:
+          url: "/api/osv-query"
+          json:
+            name: "numpy"
+            ecosystem: "PyPI"
+            userEmail: "{{ email }}"
+          expect:
+            - statusCode: [200, 400, 429]
+      - think: 5
+      
+      # 3. Another quick check
+      - post:
+          url: "/api/osv-query"
+          json:
+            name: "requests"
+            ecosystem: "PyPI"
+            userEmail: "{{ email }}"
+          expect:
+            - statusCode: [200, 400, 429]
+      - think: 3
+      
+      # 4. Brief exploration ends
+      - get:
+          url: "/"
+          expect:
+            - statusCode: 200
+      - think: 2 
