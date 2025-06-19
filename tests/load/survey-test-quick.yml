@@ -1,0 +1,44 @@
+config:
+  target: 'https://bombot.vercel.app'
+  phases:
+    - duration: 60 # 1 minute test
+      arrivalRate: 2 # 2 users/second for quick test
+      name: "Quick survey test"
+  defaults:
+    headers:
+      User-Agent: 'BomBot-Survey-Test/1.0'
+      Content-Type: 'application/json'
+    timeout: 45
+  payload:
+    - path: "./test-data/sample-emails.csv"
+      fields:
+        - email
+
+scenarios:
+  - name: "Quick Survey Test"
+    weight: 100
+    flow:
+      # 1. User arrives
+      - get:
+          url: "/"
+          expect:
+            - statusCode: 200
+      - think: 2
+      
+      # 2. Navigate to chat
+      - get:
+          url: "/chat"
+          expect:
+            - statusCode: 200
+      - think: 1
+      
+      # 3. Quick package check
+      - post:
+          url: "/api/osv-query"
+          json:
+            name: "numpy"
+            ecosystem: "PyPI"
+            userEmail: "{{ email }}"
+          expect:
+            - statusCode: [200, 400, 429]
+      - think: 2 

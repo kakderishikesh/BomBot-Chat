@@ -414,7 +414,7 @@ const ChatInterface = () => {
       setTimeout(() => {
         addMessage({
           type: 'assistant',
-          content: "I'm here to help with SBOM security analysis! You can:\n\n• Upload an SBOM file for comprehensive scanning\n• Ask about specific packages (e.g., 'Is lodash safe?')\n• Inquire about CVEs (e.g., 'What is CVE-2023-1234?')\n• Get security recommendations\n\nWhat would you like to know?",
+          content: "Please enter your message again. It seems like the system thinks your query isn't related to the Security, SBOMs, etc. Rephrase your query, if possible",
         });
       }, 1000);
     }

@@ -1,0 +1,169 @@
+config:
+  target: 'https://bombot.vercel.app'
+  phases:
+    - duration: 60 # 1 minute ramp-up
+      arrivalRate: 1 # Start slowly
+      rampTo: 4 # Ramp to 4 users/second for ~30 concurrent
+      name: "Survey participants joining"
+    - duration: 300 # 5 minutes sustained activity
+      arrivalRate: 4 # Maintain 4 new users/second for sustained load
+      name: "Active survey period - 30 concurrent users"
+    - duration: 60 # 1 minute ramp-down
+      arrivalRate: 4
+      rampTo: 1
+      name: "Survey completion"
+  defaults:
+    headers:
+      User-Agent: 'BomBot-Survey-Test/1.0'
+      Content-Type: 'application/json'
+    timeout: 45
+  payload:
+    - path: "./test-data/sample-emails.csv"
+      fields:
+        - email
+    - path: "./test-data/test-packages.csv"
+      fields:
+        - packageName
+        - ecosystem
+        - version
+
+scenarios:
+  - name: "Survey User Journey - Package Analysis"
+    weight: 60
+    flow:
+      # 1. User arrives at homepage
+      - get:
+          url: "/"
+          expect:
+            - statusCode: 200
+      - think: 3
+      
+      # 2. Navigate to chat interface
+      - get:
+          url: "/chat"
+          expect:
+            - statusCode: 200
+      - think: 2
+      
+      # 3. Query packages for vulnerabilities (main survey task)
+      - post:
+          url: "/api/osv-query"
+          json:
+            name: "{{ packageName }}"
+            ecosystem: "{{ ecosystem }}"
+            version: "{{ version }}"
+            userEmail: "{{ email }}"
+          capture:
+            - json: "$.threadId"
+              as: "queryThreadId"
+          expect:
+            - statusCode: [200, 400, 429]
+      - think: 5
+      
+      # 4. Follow up with CVE query
+      - post:
+          url: "/api/osv-query"
+          json:
+            cve: "CVE-2023-26136"
+            threadId: "{{ queryThreadId }}"
+            userEmail: "{{ email }}"
+          ifTrue: "queryThreadId"
+          expect:
+            - statusCode: [200, 400, 429]
+      - think: 3
+      
+      # 5. Ask AI for analysis
+      - post:
+          url: "/api/chat"
+          json:
+            message: "What are the most critical security issues in these packages?"
+            threadId: "{{ queryThreadId }}"
+            sessionId: "survey-{{ $uuid }}"
+            messageIndex: 1
+            userEmail: "{{ email }}"
+          ifTrue: "queryThreadId"
+          expect:
+            - statusCode: [200, 400, 429, 500]
+      - think: 8
+
+  - name: "Survey User Journey - Security Research"
+    weight: 25
+    flow:
+      # 1. User arrives and navigates
+      - get:
+          url: "/"
+          expect:
+            - statusCode: 200
+      - think: 2
+      
+      - get:
+          url: "/chat"
+          expect:
+            - statusCode: 200
+      - think: 1
+      
+      # 2. Query high-profile packages
+      - post:
+          url: "/api/osv-query"
+          json:
+            name: "numpy"
+            ecosystem: "PyPI"
+            userEmail: "{{ email }}"
+          expect:
+            - statusCode: [200, 400, 429]
+      - think: 4
+      
+      # 3. Check another common package
+      - post:
+          url: "/api/osv-query"
+          json:
+            name: "requests"
+            ecosystem: "PyPI"
+            userEmail: "{{ email }}"
+          expect:
+            - statusCode: [200, 400, 429]
+      - think: 3
+      
+      # 4. Research specific CVE
+      - post:
+          url: "/api/osv-query"
+          json:
+            cve: "CVE-2022-40897"
+            userEmail: "{{ email }}"
+          expect:
+            - statusCode: [200, 400, 429]
+      - think: 5
+
+  - name: "Survey User Journey - Quick Exploration"
+    weight: 15
+    flow:
+      # 1. Rapid browsing behavior
+      - get:
+          url: "/"
+          expect:
+            - statusCode: 200
+      - think: 3
+      
+      - get:
+          url: "/chat"
+          expect:
+            - statusCode: 200
+      - think: 2
+      
+      # 2. Quick package check
+      - post:
+          url: "/api/osv-query"
+          json:
+            name: "lodash"
+            ecosystem: "npm"
+            userEmail: "{{ email }}"
+          expect:
+            - statusCode: [200, 400, 429]
+      - think: 4
+      
+      # 3. Brief exploration ends
+      - get:
+          url: "/"
+          expect:
+            - statusCode: 200
+      - think: 1 

@@ -22,6 +22,7 @@
     "load-test:api": "artillery run tests/load/api-load.yml",
     "load-test:upload": "artillery run tests/load/upload-load.yml",
     "load-test:survey": "artillery run tests/load/survey-simulation.yml",
+    "load-test:survey-safe": "artillery run tests/load/survey-production-safe.yml",
     "stress-test": "autocannon -c 10 -d 60",
     "performance:profile": "clinic doctor -- node server.js"
   },

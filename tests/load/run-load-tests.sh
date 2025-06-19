@@ -46,7 +46,7 @@ check_prerequisites() {
     
     # Check if target URL is reachable
     echo -e "${YELLOW}🌐 Testing connectivity to ${TARGET_URL}...${NC}"
-    if curl -s --head --request GET "${TARGET_URL}" | grep "200 OK" > /dev/null; then
+    if curl -s --head --request GET "${TARGET_URL}" | grep "200" > /dev/null; then
         echo -e "${GREEN}✅ Target URL is reachable${NC}"
     else
         echo -e "${RED}❌ Target URL is not reachable. Please check the URL and try again.${NC}"
@@ -205,6 +205,9 @@ main() {
             ;;
         "survey")
             run_artillery_test "survey-simulation.yml" "Survey_Simulation"
+            ;;
+        "survey-safe")
+            run_artillery_test "survey-production-safe.yml" "Survey_Production_Safe"
             ;;
         "stress")
             run_stress_test
