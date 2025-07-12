@@ -4,6 +4,7 @@
   "description": "Full-stack SBOM vulnerability scanning with AI assistant - API and UI",
   "main": "index.js",
   "type": "module",
+  "license": "MPL-2.0",
   "scripts": {
     "dev": "vercel dev",
     "dev:ui": "vite",

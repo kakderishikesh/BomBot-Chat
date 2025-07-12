@@ -462,4 +462,19 @@ Security Measures:
 
 ---
 
-*Last Updated: December 2024 | Version: 2.0.0 | Build: d1bfa0a*
+## 📄 License
+
+This project is licensed under the **Mozilla Public License 2.0** - see the [LICENSE](LICENSE) file for details.
+
+### Key License Features:
+- **Open Source**: Free to use, modify, and distribute
+- **Copyleft**: Modifications must be shared under the same license
+- **Patent Protection**: Includes patent licensing provisions
+- **Commercial Use**: Allowed with proper attribution
+- **Compatible**: Works with many other open source licenses
+
+For more information about MPL-2.0, visit: https://mozilla.org/MPL/2.0/
+
+---
+
+*Last Updated: July 2025 | Version: 2.0.0 | Build: d1bfa0a*
