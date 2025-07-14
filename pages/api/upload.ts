@@ -494,6 +494,44 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
     });
 
+    // **GUAC Integration: Ingest SBOM into GUAC for supply chain graph analysis**
+    let guacIngestResult: any = null;
+    try {
+      console.log(`Ingesting SBOM "${fileName}" into GUAC...`);
+      
+      const guacIngestResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || ''}/api/guac-ingest`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          sbomContent: sbomContent,
+          fileName: fileName,
+          metadata: {
+            source: 'BomBot-Upload',
+            origin: 'BomBot-SBOM-Analysis',
+            collector: 'BomBot-Integration',
+            userEmail: userEmail,
+            timestamp: new Date().toISOString(),
+            packagesFound: packages.length,
+            vulnerabilitiesFound: totalVulns,
+            dependenciesFound: dependencies.length
+          }
+        }),
+      });
+
+      if (guacIngestResponse.ok) {
+        guacIngestResult = await guacIngestResponse.json();
+        console.log(`GUAC ingestion successful:`, guacIngestResult.message);
+      } else {
+        const errorText = await guacIngestResponse.text();
+        console.warn(`GUAC ingestion failed: ${guacIngestResponse.status} - ${errorText}`);
+      }
+    } catch (guacError) {
+      console.warn('GUAC ingestion failed (non-critical):', guacError);
+      // Don't fail the whole upload if GUAC ingestion fails
+    }
+
     await openai.beta.threads.messages.create(threadId, {
       role: 'user',
       content: `I've uploaded ${existingThreadId ? 'an additional' : 'an'} SBOM file "${fileName}" with ${packages.length} packages${existingThreadId ? ' for comparison with the previous SBOM(s)' : ''}. Here's the comprehensive analysis data:
@@ -519,8 +557,8 @@ ${JSON.stringify(packages.map(pkg => ({
 })), null, 2)}
 
 ${existingThreadId ? 
-  'Please provide a QUICK summary of the most critical findings with OSV.dev links (NOT NVD links). Since this is an additional SBOM, you can also compare it with previously uploaded SBOMs. Use osv.dev format for vulnerability links. Keep it brief and actionable. Suggest that I can ask for "executive summary", "detailed analysis", "dependency analysis", or "SBOM comparison" for comprehensive information.' :
-  'Please provide a QUICK summary of the most critical findings with OSV.dev links (NOT NVD links). Use osv.dev format for vulnerability links. Keep it brief and actionable. Suggest that I can ask for "executive summary", "detailed analysis", or "dependency analysis" for comprehensive information.'}`
+  'This SBOM has been automatically ingested into GUAC for supply chain graph analysis. Please provide a QUICK summary of the most critical findings with OSV.dev links (NOT NVD links). Since this is an additional SBOM, you can also compare it with previously uploaded SBOMs. Use osv.dev format for vulnerability links. Keep it brief and actionable. Suggest that I can ask for "executive summary", "detailed analysis", "dependency analysis", "supply chain insights", or "SBOM comparison" for comprehensive information.' :
+  'This SBOM has been automatically ingested into GUAC for supply chain graph analysis. Please provide a QUICK summary of the most critical findings with OSV.dev links (NOT NVD links). Use osv.dev format for vulnerability links. Keep it brief and actionable. Suggest that I can ask for "executive summary", "detailed analysis", "dependency analysis", or "supply chain insights" for comprehensive information.'}`
     });
 
     // Create a run with the assistant
@@ -614,6 +652,150 @@ ${existingThreadId ?
               required: ["package_name"]
             }
           }
+        },
+        {
+          type: "function",
+          function: {
+            name: "query_supply_chain_graph",
+            description: "Query the GUAC supply chain graph for relationships, dependencies, and vulnerabilities",
+            parameters: {
+              type: "object",
+              properties: {
+                query_type: {
+                  type: "string",
+                  description: "Type of supply chain query to perform",
+                  enum: ["packages", "vulnerabilities", "dependencies", "relationships"]
+                },
+                package_name: {
+                  type: "string",
+                  description: "Package name to query (optional)"
+                },
+                package_type: {
+                  type: "string", 
+                  description: "Package type/ecosystem (npm, PyPI, Maven, etc.)"
+                },
+                version: {
+                  type: "string",
+                  description: "Specific package version (optional)"
+                },
+                vulnerability_id: {
+                  type: "string",
+                  description: "Specific vulnerability ID to query (e.g., CVE-2023-1234)"
+                }
+              },
+              required: ["query_type"]
+            }
+          }
+        },
+        {
+          type: "function",
+          function: {
+            name: "analyze_supply_chain_relationships",
+            description: "Analyze supply chain relationships for impact assessment, blast radius, and dependency analysis",
+            parameters: {
+              type: "object",
+              properties: {
+                analysis_type: {
+                  type: "string",
+                  description: "Type of relationship analysis to perform",
+                  enum: ["dependencies", "dependents", "vulnerabilities", "blast_radius", "sboms", "attestations"]
+                },
+                subject_name: {
+                  type: "string",
+                  description: "Name of the package, artifact, or vulnerability to analyze"
+                },
+                subject_version: {
+                  type: "string",
+                  description: "Version of the subject (for packages)"
+                },
+                subject_type: {
+                  type: "string",
+                  description: "Type of subject being analyzed",
+                  enum: ["package", "artifact", "vulnerability"],
+                  default: "package"
+                },
+                max_depth: {
+                  type: "number",
+                  description: "Maximum depth for transitive analysis (default: 3)",
+                  default: 3
+                },
+                include_transitive: {
+                  type: "boolean",
+                  description: "Whether to include transitive relationships",
+                  default: true
+                }
+              },
+              required: ["analysis_type", "subject_name"]
+            }
+          }
+        },
+        {
+          type: "function",
+          function: {
+            name: "check_supply_chain_policy",
+            description: "Check supply chain policies like SLSA provenance, signatures, and attestations",
+            parameters: {
+              type: "object",
+              properties: {
+                policy_type: {
+                  type: "string",
+                  description: "Type of policy check to perform",
+                  enum: ["provenance", "signatures", "attestations", "compliance", "scorecard"]
+                },
+                package_name: {
+                  type: "string",
+                  description: "Package name to check policies for"
+                },
+                package_version: {
+                  type: "string",
+                  description: "Package version to check (optional)"
+                },
+                min_slsa_level: {
+                  type: "number",
+                  description: "Minimum SLSA level required (1-3)",
+                  default: 1
+                },
+                require_signatures: {
+                  type: "boolean",
+                  description: "Whether signatures are required",
+                  default: false
+                }
+              },
+              required: ["policy_type", "package_name"]
+            }
+          }
+        },
+        {
+          type: "function",
+          function: {
+            name: "compare_sbom_versions",
+            description: "Compare different versions or states of SBOMs to identify changes, new vulnerabilities, or drift",
+            parameters: {
+              type: "object",
+              properties: {
+                comparison_type: {
+                  type: "string",
+                  description: "Type of SBOM comparison to perform",
+                  enum: ["version_drift", "new_vulnerabilities", "dependency_changes", "package_updates"]
+                },
+                package_filter: {
+                  type: "string",
+                  description: "Filter results to specific package name (optional)"
+                },
+                include_fixed: {
+                  type: "boolean",
+                  description: "Include vulnerabilities that were fixed",
+                  default: true
+                },
+                show_additions_only: {
+                  type: "boolean",
+                  description: "Show only additions/new items",
+                  default: false
+                }
+              },
+              required: ["comparison_type"]
+            }
+          }
         }
       ]
     });
@@ -663,6 +845,14 @@ ${existingThreadId ?
       dependencyGraph: dependencyGraph,
       sessionId: sessionId,
       messageIndex: messageIndex,
+      guacIntegration: {
+        enabled: true,
+        status: guacIngestResult ? 'success' : 'failed',
+        ingestId: guacIngestResult?.ingestId,
+        message: guacIngestResult?.message || 'GUAC ingestion failed',
+        method: guacIngestResult?.details?.method,
+        timestamp: guacIngestResult?.details?.timestamp
+      },
       quickSummary: {
         packagesWithVulns: vulnPackages,
         totalVulns: totalVulns,

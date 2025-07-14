@@ -71,6 +71,129 @@ async function executeFunctionCall(functionName: string, args: any, baseUrl: str
           action: "query_dependency_data"
         });
 
+      case 'query_supply_chain_graph':
+        const guacQueryResponse = await fetch(`${baseUrl}/api/guac-query`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            queryType: args.query_type,
+            filters: {
+              packageName: args.package_name,
+              packageType: args.package_type,
+              version: args.version,
+              vulnerabilityId: args.vulnerability_id
+            }
+          })
+        });
+        
+        if (!guacQueryResponse.ok) {
+          throw new Error(`GUAC query failed: ${guacQueryResponse.status}`);
+        }
+        
+        const guacQueryData = await guacQueryResponse.json();
+        return JSON.stringify(guacQueryData);
+
+      case 'analyze_supply_chain_relationships':
+        const relationshipResponse = await fetch(`${baseUrl}/api/guac-relationships`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            queryType: args.analysis_type,
+            subject: {
+              name: args.subject_name,
+              version: args.subject_version,
+              type: args.subject_type || 'package'
+            },
+            options: {
+              maxDepth: args.max_depth || 3,
+              includeTransitive: args.include_transitive !== false
+            }
+          })
+        });
+        
+        if (!relationshipResponse.ok) {
+          throw new Error(`Relationship analysis failed: ${relationshipResponse.status}`);
+        }
+        
+        const relationshipData = await relationshipResponse.json();
+        return JSON.stringify(relationshipData);
+
+      case 'check_supply_chain_policy':
+        // For policy checks, we'll query GUAC for attestations and compliance data
+        const policyResponse = await fetch(`${baseUrl}/api/guac-relationships`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            queryType: 'attestations',
+            subject: {
+              name: args.package_name,
+              version: args.package_version,
+              type: 'package'
+            }
+          })
+        });
+        
+        if (!policyResponse.ok) {
+          throw new Error(`Policy check failed: ${policyResponse.status}`);
+        }
+        
+        const policyData = await policyResponse.json();
+        
+        // Enhance with policy analysis
+        const policyResult = {
+          ...policyData,
+          policyCheck: {
+            type: args.policy_type,
+            package: args.package_name,
+            version: args.package_version,
+            requirements: {
+              minSlsaLevel: args.min_slsa_level || 1,
+              requireSignatures: args.require_signatures || false
+            },
+            // Simple policy evaluation based on GUAC data
+            compliance: {
+              hasAttestations: policyData.data?.certifyGood?.length > 0,
+              hasScorecard: policyData.data?.scorecards?.length > 0,
+              hasNegativeFindings: policyData.data?.certifyBad?.length > 0
+            }
+          }
+        };
+        
+        return JSON.stringify(policyResult);
+
+      case 'compare_sbom_versions':
+        // For SBOM comparison, we need to query GUAC for historical data
+        const comparisonResponse = await fetch(`${baseUrl}/api/guac-query`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            queryType: 'relationships',
+            filters: {
+              packageName: args.package_filter
+            }
+          })
+        });
+        
+        if (!comparisonResponse.ok) {
+          throw new Error(`SBOM comparison failed: ${comparisonResponse.status}`);
+        }
+        
+        const comparisonData = await comparisonResponse.json();
+        
+        // Enhance with comparison analysis
+        const comparisonResult = {
+          ...comparisonData,
+          comparison: {
+            type: args.comparison_type,
+            packageFilter: args.package_filter,
+            includeFixed: args.include_fixed !== false,
+            showAdditionsOnly: args.show_additions_only || false,
+            analysisNote: `Comparison of ${args.comparison_type} based on current GUAC supply chain graph data. Historical comparison requires multiple SBOM ingestions over time.`
+          }
+        };
+        
+        return JSON.stringify(comparisonResult);
+
       default:
         throw new Error(`Unknown function: ${functionName}`);
     }

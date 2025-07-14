@@ -1,0 +1,188 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database for GUAC
+  postgres:
+    image: postgres:15-alpine
+    container_name: guac-postgres
+    environment:
+      POSTGRES_DB: guac
+      POSTGRES_USER: guac
+      POSTGRES_PASSWORD: guac-password
+      PGDATA: /var/lib/postgresql/data/guac
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U guac -d guac"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - guac-network
+
+  # NATS - Message queue for ingestion
+  nats:
+    image: nats:2.10-alpine
+    container_name: guac-nats
+    ports:
+      - "4222:4222"
+      - "8222:8222"
+    command: ["--jetstream", "--http_port", "8222"]
+    networks:
+      - guac-network
+
+  # GUAC GraphQL Server
+  guac-graphql:
+    image: ghcr.io/guacsec/guac:v0.8.6
+    container_name: guac-graphql
+    ports:
+      - "8080:8080"
+    command: [
+      "/opt/guac/guacgql",
+      "--gql-backend=ent",
+      "--gql-addr=0.0.0.0:8080",
+      "--gql-debug=true",
+      "--db-address=postgres://guac:guac-password@postgres:5432/guac?sslmode=disable",
+      "--db-driver=postgres",
+      "--db-migrate=true"
+    ]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/query"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - guac-network
+
+  # GUAC REST Server
+  guac-rest:
+    image: ghcr.io/guacsec/guac:v0.8.6
+    container_name: guac-rest
+    ports:
+      - "8081:8081"
+    command: [
+      "/opt/guac/guacrest",
+      "--rest-api-addr=0.0.0.0:8081",
+      "--gql-addr=http://guac-graphql:8080/query"
+    ]
+    depends_on:
+      guac-graphql:
+        condition: service_healthy
+    networks:
+      - guac-network
+
+  # GUAC Ingestor
+  guac-ingestor:
+    image: ghcr.io/guacsec/guac:v0.8.6
+    container_name: guac-ingestor
+    command: [
+      "/opt/guac/guacingest",
+      "--gql-addr=http://guac-graphql:8080/query",
+      "--csub-addr=guac-collectsub:2782",
+      "--nats-addr=nats://nats:4222",
+      "--blob-addr=file:///tmp/blobstore?no_tmp_dir=true"
+    ]
+    volumes:
+      - blobstore:/tmp/blobstore
+    depends_on:
+      guac-graphql:
+        condition: service_healthy
+      nats:
+        condition: service_started
+    networks:
+      - guac-network
+
+  # GUAC Collector Subscriber
+  guac-collectsub:
+    image: ghcr.io/guacsec/guac:v0.8.6
+    container_name: guac-collectsub
+    ports:
+      - "2782:2782"
+    command: [
+      "/opt/guac/guaccollect",
+      "subscriber",
+      "--csub-addr=0.0.0.0:2782",
+      "--gql-addr=http://guac-graphql:8080/query",
+      "--nats-addr=nats://nats:4222",
+      "--blob-addr=file:///tmp/blobstore?no_tmp_dir=true"
+    ]
+    volumes:
+      - blobstore:/tmp/blobstore
+    depends_on:
+      guac-graphql:
+        condition: service_healthy
+      nats:
+        condition: service_started
+    networks:
+      - guac-network
+
+  # OSV Certifier - Enriches packages with vulnerability data
+  guac-osv:
+    image: ghcr.io/guacsec/guac:v0.8.6
+    container_name: guac-osv
+    command: [
+      "/opt/guac/guaccollect",
+      "osv",
+      "--gql-addr=http://guac-graphql:8080/query",
+      "--csub-addr=guac-collectsub:2782",
+      "--interval=5m"
+    ]
+    depends_on:
+      guac-graphql:
+        condition: service_healthy
+      guac-collectsub:
+        condition: service_started
+    networks:
+      - guac-network
+
+  # Deps.dev Collector - Enriches packages with dependency data
+  guac-depsdev:
+    image: ghcr.io/guacsec/guac:v0.8.6
+    container_name: guac-depsdev
+    command: [
+      "/opt/guac/guaccollect",
+      "deps_dev",
+      "--gql-addr=http://guac-graphql:8080/query",
+      "--csub-addr=guac-collectsub:2782",
+      "--interval=5m"
+    ]
+    depends_on:
+      guac-graphql:
+        condition: service_healthy
+      guac-collectsub:
+        condition: service_started
+    networks:
+      - guac-network
+
+  # OCI Collector - Enriches container images with metadata
+  guac-oci:
+    image: ghcr.io/guacsec/guac:v0.8.6
+    container_name: guac-oci
+    command: [
+      "/opt/guac/guaccollect",
+      "oci",
+      "--gql-addr=http://guac-graphql:8080/query",
+      "--csub-addr=guac-collectsub:2782"
+    ]
+    depends_on:
+      guac-graphql:
+        condition: service_healthy
+      guac-collectsub:
+        condition: service_started
+    networks:
+      - guac-network
+
+volumes:
+  postgres-data:
+    driver: local
+  blobstore:
+    driver: local
+
+networks:
+  guac-network:
+    driver: bridge 
