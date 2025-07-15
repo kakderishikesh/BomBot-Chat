@@ -72,51 +72,72 @@ async function executeFunctionCall(functionName: string, args: any, baseUrl: str
         });
 
       case 'query_supply_chain_graph':
-        const guacQueryResponse = await fetch(`${baseUrl}/api/guac-query`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            queryType: args.query_type,
-            filters: {
-              packageName: args.package_name,
-              packageType: args.package_type,
-              version: args.version,
-              vulnerabilityId: args.vulnerability_id
+        try {
+          const supplyChainResponse = await fetch(`${baseUrl}/api/guac-query`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              queryType: args.queryType || 'packages',
+              filters: args.filters || {},
+              returnFormat: 'simplified'
+            })
+          });
+          
+          if (!supplyChainResponse.ok) {
+            const errorData = await supplyChainResponse.json();
+            if (errorData.fallback) {
+              return JSON.stringify({
+                error: 'Supply chain graph features are not available',
+                message: 'GUAC infrastructure is required for supply chain analysis. The system is running in fallback mode with standard SBOM analysis only.',
+                fallback: true
+              });
             }
-          })
-        });
-        
-        if (!guacQueryResponse.ok) {
-          throw new Error(`GUAC query failed: ${guacQueryResponse.status}`);
+            throw new Error(`Supply chain query failed: ${supplyChainResponse.status}`);
+          }
+          
+          const supplyChainData = await supplyChainResponse.json();
+          return JSON.stringify(supplyChainData.data || supplyChainData);
+        } catch (error) {
+          return JSON.stringify({
+            error: 'Failed to query supply chain graph',
+            message: 'Supply chain features may not be available. Using standard SBOM analysis instead.',
+            details: error instanceof Error ? error.message : 'Unknown error'
+          });
         }
-        
-        const guacQueryData = await guacQueryResponse.json();
-        return JSON.stringify(guacQueryData);
 
       case 'analyze_supply_chain_relationships':
-        const relationshipResponse = await fetch(`${baseUrl}/api/guac-relationships`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            queryType: args.analysis_type,
-            subject: {
-              name: args.subject_name,
-              version: args.subject_version,
-              type: args.subject_type || 'package'
-            },
-            options: {
-              maxDepth: args.max_depth || 3,
-              includeTransitive: args.include_transitive !== false
+        try {
+          const relationshipResponse = await fetch(`${baseUrl}/api/guac-relationships`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              queryType: args.queryType || 'dependencies',
+              subject: args.subject,
+              options: args.options || {}
+            })
+          });
+          
+          if (!relationshipResponse.ok) {
+            const errorData = await relationshipResponse.json();
+            if (errorData.fallback) {
+              return JSON.stringify({
+                error: 'Supply chain relationship analysis not available',
+                message: 'GUAC infrastructure is required for advanced relationship analysis. Standard dependency analysis from SBOM data is still available.',
+                fallback: true
+              });
             }
-          })
-        });
-        
-        if (!relationshipResponse.ok) {
-          throw new Error(`Relationship analysis failed: ${relationshipResponse.status}`);
+            throw new Error(`Relationship analysis failed: ${relationshipResponse.status}`);
+          }
+          
+          const relationshipData = await relationshipResponse.json();
+          return JSON.stringify(relationshipData.summary || relationshipData.data || relationshipData);
+        } catch (error) {
+          return JSON.stringify({
+            error: 'Failed to analyze supply chain relationships',
+            message: 'Advanced relationship analysis may not be available. Using SBOM-based dependency analysis instead.',
+            details: error instanceof Error ? error.message : 'Unknown error'
+          });
         }
-        
-        const relationshipData = await relationshipResponse.json();
-        return JSON.stringify(relationshipData);
 
       case 'check_supply_chain_policy':
         // For policy checks, we'll query GUAC for attestations and compliance data

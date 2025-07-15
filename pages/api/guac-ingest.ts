@@ -4,10 +4,31 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { v4 as uuidv4 } from 'uuid';
 
-// GUAC API Configuration
+// GUAC API Configuration with environment detection
 const GUAC_GRAPHQL_URL = process.env.GUAC_GRAPHQL_URL || 'http://localhost:8080/query';
 const GUAC_REST_URL = process.env.GUAC_REST_URL || 'http://localhost:8081';
 const NATS_URL = process.env.NATS_URL || 'http://localhost:4222';
+const GUAC_ENABLED = process.env.GUAC_ENABLED !== 'false' && process.env.NODE_ENV !== 'production';
+
+// Helper function to check if GUAC is available
+async function checkGuacAvailability(): Promise<boolean> {
+  if (!GUAC_ENABLED) {
+    return false;
+  }
+  
+  try {
+    const response = await fetch(GUAC_GRAPHQL_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query: '{ __schema { types { name } } }' }),
+      signal: AbortSignal.timeout(5000) // 5 second timeout
+    });
+    return response.ok;
+  } catch (error) {
+    console.warn('GUAC services not available:', error instanceof Error ? error.message : 'Unknown error');
+    return false;
+  }
+}
 
 interface GuacIngestRequest {
   sbomContent?: string;
@@ -28,6 +49,7 @@ interface GuacIngestResponse {
   message?: string;
   error?: string;
   details?: any;
+  fallback?: boolean;
 }
 
 // Helper function to detect SBOM format
@@ -298,6 +320,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     });
   }
 
+  // Check if GUAC is available
+  const guacAvailable = await checkGuacAvailability();
+  
+  if (!guacAvailable) {
+    return res.status(503).json({
+      success: false,
+      error: 'GUAC services are not available',
+      message: 'SBOM ingestion to supply chain graph requires GUAC infrastructure. SBOMs are still processed normally.',
+      fallback: true
+    });
+  }
+
   try {
     let sbomContent: string;
     let fileName: string;
@@ -385,7 +419,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     res.status(500).json({ 
       success: false,
       error: 'Internal server error during SBOM ingestion',
-      details: error instanceof Error ? error.message : 'Unknown error'
+      details: error instanceof Error ? error.message : 'Unknown error',
+      fallback: true
     });
   }
 }

@@ -495,41 +495,51 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
 
     // **GUAC Integration: Ingest SBOM into GUAC for supply chain graph analysis**
-    let guacIngestResult: any = null;
+    // Try to ingest into GUAC (non-blocking)
+    let guacIntegration = { success: false, error: 'GUAC not attempted' };
     try {
-      console.log(`Ingesting SBOM "${fileName}" into GUAC...`);
-      
-      const guacIngestResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || ''}/api/guac-ingest`, {
+      const guacResponse = await fetch(`${req.headers.origin || 'http://localhost:3000'}/api/guac-ingest`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          sbomContent: sbomContent,
-          fileName: fileName,
+          sbomContent,
+          fileName: file.originalFilename || 'uploaded-sbom.json',
           metadata: {
-            source: 'BomBot-Upload',
-            origin: 'BomBot-SBOM-Analysis',
-            collector: 'BomBot-Integration',
-            userEmail: userEmail,
-            timestamp: new Date().toISOString(),
-            packagesFound: packages.length,
-            vulnerabilitiesFound: totalVulns,
-            dependenciesFound: dependencies.length
+            source: 'BomBot Upload',
+            origin: 'User Upload',
+            collector: 'BomBot GUAC Integration',
+            userEmail: userEmail || undefined,
+            timestamp: new Date().toISOString()
           }
         }),
+        signal: AbortSignal.timeout(30000) // 30 second timeout
       });
 
-      if (guacIngestResponse.ok) {
-        guacIngestResult = await guacIngestResponse.json();
-        console.log(`GUAC ingestion successful:`, guacIngestResult.message);
+      if (guacResponse.ok) {
+        const guacResult = await guacResponse.json();
+        guacIntegration = guacResult;
+        console.log('GUAC integration successful:', guacResult.ingestId);
       } else {
-        const errorText = await guacIngestResponse.text();
-        console.warn(`GUAC ingestion failed: ${guacIngestResponse.status} - ${errorText}`);
+        const guacError = await guacResponse.json();
+        guacIntegration = { 
+          success: false, 
+          error: guacError.error || 'GUAC ingestion failed',
+          fallback: guacError.fallback || false
+        };
+        if (!guacError.fallback) {
+          console.warn('GUAC integration failed:', guacError);
+        }
       }
     } catch (guacError) {
-      console.warn('GUAC ingestion failed (non-critical):', guacError);
-      // Don't fail the whole upload if GUAC ingestion fails
+      // GUAC integration failed - this is non-blocking
+      guacIntegration = { 
+        success: false, 
+        error: guacError instanceof Error ? guacError.message : 'GUAC service unavailable',
+        fallback: true
+      };
+      console.log('GUAC integration skipped (service unavailable)');
     }
 
     await openai.beta.threads.messages.create(threadId, {
@@ -847,11 +857,10 @@ ${existingThreadId ?
       messageIndex: messageIndex,
       guacIntegration: {
         enabled: true,
-        status: guacIngestResult ? 'success' : 'failed',
-        ingestId: guacIngestResult?.ingestId,
-        message: guacIngestResult?.message || 'GUAC ingestion failed',
-        method: guacIngestResult?.details?.method,
-        timestamp: guacIngestResult?.details?.timestamp
+        status: guacIntegration.success ? 'success' : 'failed',
+        ingestId: guacIntegration.ingestId,
+        message: guacIntegration.error,
+        fallback: guacIntegration.fallback
       },
       quickSummary: {
         packagesWithVulns: vulnPackages,

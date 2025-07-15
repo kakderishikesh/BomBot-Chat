@@ -431,271 +431,243 @@ const ChatInterface = () => {
     }
   };
 
-  // Determine if we should show tabs (when files are uploaded or thread exists)
-  const showTabs = uploadedFiles.length > 0 || currentThreadId !== null;
+  // Check if we should show tabs (when files are uploaded and user has email)
+  const shouldShowTabs = uploadedFiles.length > 0 && userEmail;
+  
+  // Check if GUAC features are available based on recent upload responses
+  const guacAvailable = uploadedFiles.length > 0 && 
+    messages.some(msg => 
+      msg.metadata?.guacIntegration?.success === true
+    );
 
   return (
-    <div 
-      className="flex flex-col h-full relative"
-      onDragEnter={handleDragEnter}
-      onDragOver={handleDragOver}
-      onDragLeave={handleDragLeave}
-      onDrop={handleDrop}
-    >
-      {/* Header */}
-      <div className="border-b p-4 bg-white">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center">
-              <Shield className="h-6 w-6 text-white" />
-            </div>
-            <div>
-              <h1 className="text-xl font-semibold text-gray-900">BomBot</h1>
-              <p className="text-sm text-gray-500">
-                {showTabs ? 'SBOM security expert with supply chain insights' : 'Your SBOM security expert'}
-              </p>
-            </div>
-          </div>
+    <>
+      {shouldShowEmailDialog && (
+        <EmailCollectionDialog onSubmit={handleEmailSubmit} />
+      )}
+      
+      <div className="flex flex-col h-full bg-background relative">
+        {isDragOver && <FileUploadOverlay />}
+        
+        <div 
+          className="flex-1 flex flex-col"
+          onDragEnter={handleDragEnter}
+          onDragLeave={handleDragLeave}
+          onDragOver={handleDragOver}
+          onDrop={handleDrop}
+        >
           
-          {/* New Chat Button */}
-          {messages.length > 0 && (
-            <Button
-              onClick={clearChat}
-              variant="outline"
-              size="sm"
-              className="flex items-center space-x-2 text-gray-600 hover:text-gray-900"
-            >
-              <Plus className="h-4 w-4" />
-              <span>New Chat</span>
-            </Button>
-          )}
-        </div>
-      </div>
+          {shouldShowTabs ? (
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
+              <div className="border-b bg-muted/20">
+                <TabsList className="grid w-full max-w-md grid-cols-3 mx-4 my-2">
+                  <TabsTrigger value="chat" className="flex items-center gap-2">
+                    <MessageSquare className="h-4 w-4" />
+                    Chat
+                  </TabsTrigger>
+                  <TabsTrigger 
+                    value="graph" 
+                    className="flex items-center gap-2"
+                    disabled={!guacAvailable}
+                    title={!guacAvailable ? "Supply chain graph requires GUAC infrastructure" : ""}
+                  >
+                    <Network className="h-4 w-4" />
+                    Supply Chain
+                    {!guacAvailable && <span className="text-xs text-muted-foreground">(N/A)</span>}
+                  </TabsTrigger>
+                  <TabsTrigger 
+                    value="compliance" 
+                    className="flex items-center gap-2"
+                    disabled={!guacAvailable}
+                    title={!guacAvailable ? "Policy compliance requires GUAC infrastructure" : ""}
+                  >
+                    <FileCheck className="h-4 w-4" />
+                    Compliance
+                    {!guacAvailable && <span className="text-xs text-muted-foreground">(N/A)</span>}
+                  </TabsTrigger>
+                </TabsList>
+              </div>
 
-      {/* Tabbed Interface */}
-      {showTabs ? (
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
-          <div className="border-b px-4 bg-white">
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="chat" className="flex items-center gap-2">
-                <MessageSquare className="h-4 w-4" />
-                Chat
-              </TabsTrigger>
-              <TabsTrigger value="supply-chain" className="flex items-center gap-2">
-                <Network className="h-4 w-4" />
-                Supply Chain Graph
-              </TabsTrigger>
-              <TabsTrigger value="compliance" className="flex items-center gap-2">
-                <FileCheck className="h-4 w-4" />
-                Policy Compliance
-              </TabsTrigger>
-            </TabsList>
-          </div>
+              <TabsContent value="chat" className="flex-1 flex flex-col">
+                {/* Chat content - existing implementation */}
+                <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                  {messages.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center h-full text-center max-w-md mx-auto">
+                      <Shield className="h-16 w-16 text-primary mb-4" />
+                      <h2 className="text-2xl font-bold mb-2">Welcome to BomBot!</h2>
+                      <p className="text-muted-foreground mb-6">
+                        Upload your SBOM file to get started with security analysis, or ask me questions about supply chain security.
+                      </p>
+                      <Button 
+                        onClick={() => fileInputRef.current?.click()}
+                        className="mb-4"
+                      >
+                        <Paperclip className="h-4 w-4 mr-2" />
+                        Upload SBOM
+                      </Button>
+                      <p className="text-sm text-muted-foreground">
+                        Supports SPDX and CycloneDX formats
+                      </p>
+                    </div>
+                  ) : (
+                    <>
+                      {messages.map((message) => (
+                        <ChatMessage key={message.id} message={message} />
+                      ))}
+                      {isLoading && (
+                        <div className="flex justify-center p-4">
+                          <StatusIndicator status="analyzing" />
+                        </div>
+                      )}
+                      <div ref={messagesEndRef} />
+                    </>
+                  )}
+                </div>
 
-          <TabsContent value="chat" className="flex-1 flex flex-col m-0 p-0">
-            {/* Chat Content */}
-
-            {/* Messages Area */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-4">
-              {messages.length === 0 ? (
-                <div className="text-center py-12">
-                  <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <Shield className="h-8 w-8 text-blue-600" />
-                  </div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                    Hi! I'm BomBot 👋
-                  </h3>
-                  <p className="text-gray-600 max-w-md mx-auto mb-6">
-                    Your SBOM security expert. Upload an SBOM file, ask about packages, or inquire about CVEs - I'm here to help!
-                  </p>
-                  
-                  {/* Quick suggestion buttons */}
-                  <div className="flex flex-wrap gap-2 justify-center">
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => setInputText("Is lodash safe?")}
-                    >
-                      Check a package
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      size="sm"
+                {/* Input area */}
+                <div className="border-t bg-background p-4">
+                  <div className="flex gap-2 items-end max-w-4xl mx-auto">
+                    <div className="flex-1">
+                      <Input
+                        value={inputText}
+                        onChange={(e) => setInputText(e.target.value)}
+                        onKeyPress={handleKeyPress}
+                        placeholder="Ask about your SBOM, dependencies, or security concerns..."
+                        disabled={isLoading}
+                        className="min-h-[44px]"
+                      />
+                    </div>
+                    <Button
                       onClick={() => fileInputRef.current?.click()}
+                      variant="outline"
+                      size="icon"
+                      className="h-[44px] w-[44px]"
+                      disabled={isLoading}
                     >
-                      Upload SBOM
+                      <Paperclip className="h-4 w-4" />
                     </Button>
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => setInputText("What is CVE-2023-1234?")}
+                    <Button
+                      onClick={handleSendMessage}
+                      disabled={isLoading || !inputText.trim()}
+                      className="h-[44px] px-6"
                     >
-                      Ask about CVE
+                      <Send className="h-4 w-4" />
                     </Button>
                   </div>
                 </div>
-              ) : (
-                messages.map((message) => (
-                  <ChatMessage key={message.id} message={message} />
-                ))
-              )}
+              </TabsContent>
 
-              {/* Status Indicator */}
-              {isLoading && <StatusIndicator />}
-              
-              <div ref={messagesEndRef} />
-            </div>
+              <TabsContent value="graph" className="flex-1">
+                {guacAvailable ? (
+                  <GuacInsightsTab />
+                ) : (
+                  <div className="flex flex-col items-center justify-center h-full text-center p-8">
+                    <Network className="h-16 w-16 text-muted-foreground mb-4" />
+                    <h3 className="text-xl font-semibold mb-2">Supply Chain Graph Unavailable</h3>
+                    <p className="text-muted-foreground max-w-md">
+                      The supply chain graph feature requires GUAC infrastructure to be running. 
+                      Your SBOMs are still analyzed for vulnerabilities using standard scanning.
+                    </p>
+                    <p className="text-sm text-muted-foreground mt-4">
+                      To enable supply chain features, set up GUAC infrastructure following the setup guide.
+                    </p>
+                  </div>
+                )}
+              </TabsContent>
 
-            {/* Input Area */}
-            <div className="border-t p-4 bg-white">
-              <div className="flex items-center space-x-2">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="flex-shrink-0"
-                >
-                  <Paperclip className="h-4 w-4" />
-                </Button>
-                
-                <div className="flex-1 relative">
-                  <Input
-                    value={inputText}
-                    onChange={(e) => setInputText(e.target.value)}
-                    onKeyPress={handleKeyPress}
-                    placeholder="Ask about packages, CVEs, or upload an SBOM file..."
-                    className="pr-12"
-                  />
+              <TabsContent value="compliance" className="flex-1">
+                {guacAvailable ? (
+                  <PolicyComplianceViewer />
+                ) : (
+                  <div className="flex flex-col items-center justify-center h-full text-center p-8">
+                    <FileCheck className="h-16 w-16 text-muted-foreground mb-4" />
+                    <h3 className="text-xl font-semibold mb-2">Policy Compliance Unavailable</h3>
+                    <p className="text-muted-foreground max-w-md">
+                      Policy compliance tracking requires GUAC infrastructure for supply chain analysis.
+                      Basic vulnerability scanning is still available in the Chat tab.
+                    </p>
+                    <p className="text-sm text-muted-foreground mt-4">
+                      To enable compliance features, set up GUAC infrastructure following the setup guide.
+                    </p>
+                  </div>
+                )}
+              </TabsContent>
+                        </Tabs>
+          ) : (
+            /* Non-tabbed interface for when no files are uploaded or user hasn't provided email */
+            <>
+              {/* Messages Area */}
+              <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                {messages.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center h-full text-center max-w-md mx-auto">
+                    <Shield className="h-16 w-16 text-primary mb-4" />
+                    <h2 className="text-2xl font-bold mb-2">Welcome to BomBot!</h2>
+                    <p className="text-muted-foreground mb-6">
+                      Upload your SBOM file to get started with security analysis, or ask me questions about supply chain security.
+                    </p>
+                    <Button 
+                      onClick={() => fileInputRef.current?.click()}
+                      className="mb-4"
+                    >
+                      <Paperclip className="h-4 w-4 mr-2" />
+                      Upload SBOM
+                    </Button>
+                    <p className="text-sm text-muted-foreground">
+                      Supports SPDX and CycloneDX formats
+                    </p>
+                  </div>
+                ) : (
+                  <>
+                    {messages.map((message) => (
+                      <ChatMessage key={message.id} message={message} />
+                    ))}
+                    {isLoading && (
+                      <div className="flex justify-center p-4">
+                        <StatusIndicator status="analyzing" />
+                      </div>
+                    )}
+                    <div ref={messagesEndRef} />
+                  </>
+                )}
+              </div>
+
+              {/* Input Area */}
+              <div className="border-t bg-background p-4">
+                <div className="flex gap-2 items-end max-w-4xl mx-auto">
+                  <div className="flex-1">
+                    <Input
+                      value={inputText}
+                      onChange={(e) => setInputText(e.target.value)}
+                      onKeyPress={handleKeyPress}
+                      placeholder="Ask about security, upload an SBOM, or inquire about packages..."
+                      disabled={isLoading}
+                      className="min-h-[44px]"
+                    />
+                  </div>
+                  <Button
+                    onClick={() => fileInputRef.current?.click()}
+                    variant="outline"
+                    size="icon"
+                    className="h-[44px] w-[44px]"
+                    disabled={isLoading}
+                  >
+                    <Paperclip className="h-4 w-4" />
+                  </Button>
                   <Button
                     onClick={handleSendMessage}
-                    disabled={!inputText.trim() || isLoading}
-                    size="sm"
-                    className="absolute right-1 top-1 h-8 w-8 p-0"
+                    disabled={isLoading || !inputText.trim()}
+                    className="h-[44px] px-6"
                   >
                     <Send className="h-4 w-4" />
                   </Button>
                 </div>
               </div>
-              
-              <p className="text-xs text-gray-500 mt-2 text-center">
-                Try: "Is express.js safe?", "CVE-2023-1234", or drag & drop an SBOM file
-              </p>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="supply-chain" className="flex-1 p-4 overflow-y-auto">
-            <GuacInsightsTab 
-              uploadedFiles={uploadedFiles}
-              currentThreadId={currentThreadId}
-            />
-          </TabsContent>
-
-          <TabsContent value="compliance" className="flex-1 p-4 overflow-y-auto">
-            <PolicyComplianceViewer />
-          </TabsContent>
-        </Tabs>
-      ) : (
-        /* Non-tabbed interface for when no files are uploaded */
-        <>
-          {/* Messages Area */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-4">
-            {messages.length === 0 ? (
-              <div className="text-center py-12">
-                <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Shield className="h-8 w-8 text-blue-600" />
-                </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                  Hi! I'm BomBot 👋
-                </h3>
-                <p className="text-gray-600 max-w-md mx-auto mb-6">
-                  Your SBOM security expert. Upload an SBOM file, ask about packages, or inquire about CVEs - I'm here to help!
-                </p>
-                
-                {/* Quick suggestion buttons */}
-                <div className="flex flex-wrap gap-2 justify-center">
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => setInputText("Is lodash safe?")}
-                  >
-                    Check a package
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => fileInputRef.current?.click()}
-                  >
-                    Upload SBOM
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => setInputText("What is CVE-2023-1234?")}
-                  >
-                    Ask about CVE
-                  </Button>
-                </div>
-              </div>
-            ) : (
-              messages.map((message) => (
-                <ChatMessage key={message.id} message={message} />
-              ))
-            )}
-
-            {/* Status Indicator */}
-            {isLoading && <StatusIndicator />}
-            
-            <div ref={messagesEndRef} />
-          </div>
-
-          {/* Input Area */}
-          <div className="border-t p-4 bg-white">
-            <div className="flex items-center space-x-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => fileInputRef.current?.click()}
-                className="flex-shrink-0"
-              >
-                <Paperclip className="h-4 w-4" />
-              </Button>
-              
-              <div className="flex-1 relative">
-                <Input
-                  value={inputText}
-                  onChange={(e) => setInputText(e.target.value)}
-                  onKeyPress={handleKeyPress}
-                  placeholder="Ask about packages, CVEs, or upload an SBOM file..."
-                  className="pr-12"
-                />
-                <Button
-                  onClick={handleSendMessage}
-                  disabled={!inputText.trim() || isLoading}
-                  size="sm"
-                  className="absolute right-1 top-1 h-8 w-8 p-0"
-                >
-                  <Send className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-            
-            <p className="text-xs text-gray-500 mt-2 text-center">
-              Try: "Is express.js safe?", "CVE-2023-1234", or drag & drop an SBOM file
-            </p>
-          </div>
-        </>
-      )}
-
-      {/* File Upload Overlay */}
-      {isDragOver && <FileUploadOverlay />}
-      
-      {/* Email Collection Dialog */}
-      <EmailCollectionDialog 
-        isOpen={shouldShowEmailDialog}
-        onEmailSubmit={handleEmailSubmit}
-      />
-      
-      {/* Hidden file input */}
+            </>
+          )}
+         </div>
+       </div>
+       
+       {/* Hidden file input */}
       <input
         ref={fileInputRef}
         type="file"
@@ -706,7 +678,7 @@ const ChatInterface = () => {
         }}
         className="hidden"
       />
-    </div>
+    </>
   );
 };
 

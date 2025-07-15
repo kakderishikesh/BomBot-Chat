@@ -5,9 +5,30 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY! 
 });
 
-// GUAC API Configuration
+// GUAC API Configuration with environment detection
 const GUAC_GRAPHQL_URL = process.env.GUAC_GRAPHQL_URL || 'http://localhost:8080/query';
 const GUAC_REST_URL = process.env.GUAC_REST_URL || 'http://localhost:8081';
+const GUAC_ENABLED = process.env.GUAC_ENABLED !== 'false' && process.env.NODE_ENV !== 'production';
+
+// Helper function to check if GUAC is available
+async function checkGuacAvailability(): Promise<boolean> {
+  if (!GUAC_ENABLED) {
+    return false;
+  }
+  
+  try {
+    const response = await fetch(GUAC_GRAPHQL_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query: '{ __schema { types { name } } }' }),
+      signal: AbortSignal.timeout(5000) // 5 second timeout
+    });
+    return response.ok;
+  } catch (error) {
+    console.warn('GUAC services not available:', error instanceof Error ? error.message : 'Unknown error');
+    return false;
+  }
+}
 
 interface GuacQueryRequest {
   queryType: 'packages' | 'vulnerabilities' | 'dependencies' | 'relationships' | 'custom';
@@ -253,9 +274,10 @@ async function executeGuacQuery(query: string): Promise<any> {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'User-Agent': 'BomBot-GUAC-Integration/1.0'
+        'User-Agent': 'BomBot-GUAC-Query/1.0'
       },
-      body: JSON.stringify({ query })
+      body: JSON.stringify({ query }),
+      signal: AbortSignal.timeout(10000) // 10 second timeout
     });
 
     if (!response.ok) {
@@ -265,7 +287,7 @@ async function executeGuacQuery(query: string): Promise<any> {
     const result = await response.json();
     
     if (result.errors) {
-      throw new Error(`GraphQL errors: ${JSON.stringify(result.errors)}`);
+      throw new Error(`GraphQL query errors: ${JSON.stringify(result.errors)}`);
     }
 
     return result.data;
@@ -277,59 +299,72 @@ async function executeGuacQuery(query: string): Promise<any> {
 
 // Simplify GUAC response for easier consumption
 function simplifyGuacResponse(data: any, queryType: string): any {
+  if (!data) return null;
+
   switch (queryType) {
     case 'packages':
-      if (data.packages) {
-        return data.packages.map((pkg: GuacPackage) => ({
+      return {
+        packages: data.packages?.map((pkg: GuacPackage) => ({
           type: pkg.type,
-          packages: pkg.namespaces.flatMap(ns => 
-            ns.names.flatMap(name => 
-              name.versions.map(version => ({
-                namespace: ns.namespace,
-                name: name.name,
-                version: version.version,
-                id: version.id
-              }))
-            )
-          )
-        }));
-      }
-      break;
+          namespace: pkg.namespaces[0]?.namespace || '',
+          name: pkg.namespaces[0]?.names[0]?.name || '',
+          versions: pkg.namespaces[0]?.names[0]?.versions?.map(v => v.version) || []
+        })) || []
+      };
 
     case 'vulnerabilities':
-      if (data.vulnerabilities) {
-        return data.vulnerabilities.map((vuln: GuacVulnerability) => ({
-          type: vuln.type,
-          ids: vuln.vulnerabilityIDs.map(v => v.vulnerabilityID)
-        }));
-      }
-      break;
+      return {
+        vulnerabilities: data.vulnerabilities?.map((vuln: GuacVulnerability) => ({
+          id: vuln.vulnerabilityIDs[0]?.vulnerabilityID || '',
+          type: vuln.type
+        })) || []
+      };
 
     case 'dependencies':
-      if (data.dependencies) {
-        return data.dependencies.map((dep: GuacDependency) => ({
-          package: dep.package.namespaces[0]?.names[0]?.name || 'unknown',
-          dependsOn: dep.dependsOn.namespaces[0]?.names[0]?.name || 'unknown',
-          type: dep.dependencyType,
-          justification: dep.justification
-        }));
-      }
-      break;
+      return {
+        dependencies: data.dependencies?.map((dep: GuacDependency) => ({
+          package: {
+            name: dep.package.namespaces[0]?.names[0]?.name || '',
+            version: dep.package.namespaces[0]?.names[0]?.versions[0]?.version || ''
+          },
+          dependsOn: {
+            name: dep.dependsOn.namespaces[0]?.names[0]?.name || '',
+            version: dep.dependsOn.namespaces[0]?.names[0]?.versions[0]?.version || ''
+          },
+          type: dep.dependencyType
+        })) || []
+      };
 
     case 'relationships':
       return {
         sboms: data.hasSBOMs?.length || 0,
-        vulnerabilityLinks: data.certifyVulns?.length || 0,
+        vulnerabilities: data.certifyVulns?.length || 0,
         totalRelationships: (data.hasSBOMs?.length || 0) + (data.certifyVulns?.length || 0)
       };
-  }
 
-  return data;
+    default:
+      return data;
+  }
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method Not Allowed' });
+    return res.status(405).json({ 
+      success: false, 
+      error: 'Method Not Allowed' 
+    });
+  }
+
+  // Check if GUAC is available
+  const guacAvailable = await checkGuacAvailability();
+  
+  if (!guacAvailable) {
+    return res.status(503).json({
+      success: false,
+      error: 'GUAC services are not available',
+      message: 'Supply chain graph features require GUAC infrastructure to be running. Please refer to the setup guide.',
+      fallback: true
+    });
   }
 
   const {
@@ -343,6 +378,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   if (!queryType && !customQuery) {
     return res.status(400).json({ 
+      success: false,
       error: 'Either queryType or customQuery is required' 
     });
   }
@@ -370,36 +406,24 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           query = buildRelationshipQuery(filters);
           break;
         default:
-          return res.status(400).json({ error: `Unknown query type: ${queryType}` });
+          return res.status(400).json({ 
+            success: false,
+            error: `Unknown query type: ${queryType}` 
+          });
       }
 
       data = await executeGuacQuery(query);
     }
 
-    // Process and return response
-    const result = returnFormat === 'simplified' 
+    // Process the response
+    const processedData = returnFormat === 'simplified' 
       ? simplifyGuacResponse(data, queryType) 
       : data;
 
     // If threadId is provided, send results to the AI assistant
     if (threadId) {
       try {
-        let messageContent: string;
-        
-        if (queryType === 'packages') {
-          const packageCount = result?.length || 0;
-          messageContent = `I found ${packageCount} packages in the GUAC supply chain graph matching your criteria:\n\n${JSON.stringify(result, null, 2)}\n\nThis data shows packages with their versions and relationships. You can ask me to analyze specific packages, find dependencies, or explore security implications.`;
-        } else if (queryType === 'vulnerabilities') {
-          const vulnCount = result?.length || 0;
-          messageContent = `Found ${vulnCount} vulnerabilities in the GUAC database:\n\n${JSON.stringify(result, null, 2)}\n\nThese vulnerabilities have been mapped to packages in your supply chain. I can provide detailed analysis of impact and remediation strategies.`;
-        } else if (queryType === 'dependencies') {
-          const depCount = result?.length || 0;
-          messageContent = `Found ${depCount} dependency relationships in GUAC:\n\n${JSON.stringify(result, null, 2)}\n\nThis shows how packages depend on each other in your supply chain. I can help analyze dependency risks and suggest security improvements.`;
-        } else if (queryType === 'relationships') {
-          messageContent = `Supply chain relationship analysis from GUAC:\n\n${JSON.stringify(result, null, 2)}\n\nThis shows SBOMs, vulnerability mappings, and other relationships. I can help you understand the security posture and compliance status.`;
-        } else {
-          messageContent = `GUAC query results:\n\n${JSON.stringify(result, null, 2)}\n\nI can help analyze this supply chain data and provide security insights.`;
-        }
+        const messageContent = `GUAC query results for ${queryType}:\n\n${JSON.stringify(processedData, null, 2)}\n\nI can help you understand these supply chain relationships and their security implications.`;
 
         await openai.beta.threads.messages.create(threadId, {
           role: 'user',
@@ -412,38 +436,37 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
         return res.status(200).json({ 
           success: true,
-          data: result,
+          data: processedData,
           query: query,
           runId: run.id,
-          threadId: threadId,
-          filters: filters
+          threadId: threadId
         });
       } catch (assistantError) {
         console.error('Failed to send to assistant:', assistantError);
         // Still return the GUAC data even if assistant fails
         return res.status(200).json({ 
           success: true,
-          data: result,
+          data: processedData,
           query: query,
-          assistantError: 'Failed to send to AI assistant',
-          filters: filters
+          assistantError: 'Failed to send to AI assistant'
         });
       }
     }
 
-    // Return raw GUAC data
+    // Return query results
     res.status(200).json({ 
       success: true,
-      data: result,
-      query: query,
-      filters: filters
+      data: processedData,
+      query: query
     });
 
   } catch (error) {
     console.error('GUAC query error:', error);
     res.status(500).json({ 
-      error: 'Failed to query GUAC database',
-      details: error instanceof Error ? error.message : 'Unknown error'
+      success: false,
+      error: 'Failed to query GUAC',
+      details: error instanceof Error ? error.message : 'Unknown error',
+      fallback: true
     });
   }
 } 
