@@ -131,3 +131,7 @@ storybook-static
 
 # Turborepo
 .turbo
+
+# Temporary files
+BomBot_Analysis_Summary.md
+BomBot_Introduction_Slide_Deck.md
