@@ -1,16 +1,10 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { OpenAI } from 'openai';
-
-const openai = new OpenAI({ 
-  apiKey: process.env.OPENAI_API_KEY! 
-});
 
 interface OSVQueryRequest {
   version?: string;
   name?: string;
   ecosystem?: string;
   cve?: string;
-  threadId?: string;
   userEmail?: string;
 }
 
@@ -56,7 +50,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(405).json({ error: 'Method Not Allowed' });
   }
 
-  const { version, name, ecosystem, cve, threadId, userEmail }: OSVQueryRequest = req.body;
+  const { version, name, ecosystem, cve, userEmail }: OSVQueryRequest = req.body;
 
   if (!cve && (!name || !ecosystem)) {
     return res.status(400).json({ 
@@ -114,51 +108,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       data = await response.json() as OSVQueryResponse;
     }
 
-    // If threadId is provided, send the results to the existing conversation
-    if (threadId) {
-      try {
-        let messageContent: string;
-        
-        if (cve) {
-          const vuln = data as OSVVulnerability;
-          messageContent = `Here are the details for CVE ${cve}:\n\n${JSON.stringify(vuln, null, 2)}\n\nPlease provide a QUICK summary with OSV.dev links (NOT NVD links). Use osv.dev format for vulnerability links. Keep it brief and suggest I can ask for "detailed analysis" if needed.`;
-        } else {
-          const queryResult = data as OSVQueryResponse;
-          const vulnCount = queryResult.vulns?.length || 0;
-          
-          if (vulnCount === 0) {
-            messageContent = `I queried the OSV database for package "${name}" in ecosystem "${ecosystem}"${version ? ` version "${version}"` : ''} and found no known vulnerabilities. ✅ This package appears to be safe!`;
-          } else {
-            messageContent = `I found ${vulnCount} vulnerability/vulnerabilities for package "${name}" in ecosystem "${ecosystem}"${version ? ` version "${version}"` : ''}:\n\n${JSON.stringify(queryResult, null, 2)}\n\nPlease provide a QUICK summary with OSV.dev links (NOT NVD links). Use osv.dev format for vulnerability links. Keep it brief and suggest I can ask for "detailed analysis" if needed.`;
-          }
-        }
-
-        await openai.beta.threads.messages.create(threadId, {
-          role: 'user',
-          content: messageContent
-        });
-
-        const run = await openai.beta.threads.runs.create(threadId, {
-          assistant_id: process.env.ASSISTANT_ID!,
-        });
-
-        return res.status(200).json({ 
-          success: true,
-          result: data,
-          runId: run.id,
-          threadId: threadId,
-          query: cve ? { cve } : { name, ecosystem, version }
-        });
-      } catch (assistantError) {
-        console.error('Failed to send to assistant:', assistantError);
-        // Still return the OSV data even if assistant fails
-        return res.status(200).json({ 
-          result: data,
-          assistantError: 'Failed to send to AI assistant',
-          query: cve ? { cve } : { name, ecosystem, version }
-        });
-      }
-    }
+    // OSV query completed successfully
 
     // Return raw OSV data
     res.status(200).json({ 

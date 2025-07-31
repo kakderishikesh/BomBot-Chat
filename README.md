@@ -1,48 +1,52 @@
-# 🤖 BomBot - Advanced AI-Powered SBOM Security Analysis Platform
+# 🤖 BomBot - Self-Hosted AI SBOM Security Analysis Platform
 
-> **Internal Technical Documentation**  
-> A hybrid-architecture full-stack security analysis platform that combines intelligent templated responses with advanced AI consultation for comprehensive SBOM vulnerability assessment.
+> **Next-Generation Security Analysis**  
+> A hybrid-architecture full-stack security platform with **self-hosted Llama 3.2 AI** that provides instant vulnerability analysis, intelligent function calling, and comprehensive SBOM security assessment with complete data privacy.
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/kakderishikesh/BomBot-Chat)
 
 ## 🏗️ System Architecture
 
-BomBot implements a sophisticated hybrid response system that provides both instant vulnerability analysis and deep AI-powered security consultation:
+BomBot implements a **self-hosted AI architecture** with direct chat completions and intelligent function calling for comprehensive security analysis:
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                     BomBot Platform                         │
+│                 BomBot Self-Hosted Platform                 │
 ├─────────────────────────────────────────────────────────────┤
 │  🎨 React UI (Vite)              🔧 Next.js API Routes     │
-│  ├── ChatInterface.tsx           ├── /api/upload           │
-│  ├── PackageQueryForm.tsx        ├── /api/osv-query        │
-│  ├── ChatMessage.tsx             ├── /api/chat             │
+│  ├── ChatInterface.tsx           ├── /api/chat             │
+│  ├── Direct AI Chat              ├── /api/upload           │
+│  ├── ChatMessage.tsx             ├── /api/osv-query        │
 │  ├── VulnerabilityCards          └── /api/run-status       │
-│  └── Real-time Polling                                     │
+│  └── Conversation History                                  │
 ├─────────────────────────────────────────────────────────────┤
-│  📊 Hybrid Response Engine                                 │
-│  ├── Quick Templated Responses   ├── AI Thread Management │
-│  ├── OSV Data Transformation     ├── Polling Architecture │
-│  └── Vulnerability Card Gen.     └── Context Preservation │
+│  🧠 AI Client Engine (src/lib/ai-client.ts)               │
+│  ├── Function Call Detection     ├── Conversation Context  │
+│  ├── Hybrid Provider Support     ├── Direct Responses     │
+│  └── Manual Function Execution   └── Error Recovery       │
 └─────────────────┬───────────────────────────────────────────┘
                   │
     ┌─────────────▼─────────────────────────────────────┐
-    │              External Integrations                │
+    │          AI & Data Integrations                   │
     ├───────────────────────────────────────────────────┤
-    │  🤖 OpenAI GPT-4 Assistant    📊 OSV.dev API      │
-    │  ├── Function Calling         ├── Package Queries │
-    │  ├── Thread Conversations     ├── CVE Lookups     │
-    │  └── Markdown Responses       └── Real-time Data  │
+    │  🚀 Jetstream (Self-Hosted)   📊 OSV.dev API      │
+    │  ├── Llama 3.2-1B-Instruct    ├── Package Queries │
+    │  ├── Direct Chat Completions  ├── CVE Lookups     │
+    │  ├── Complete Data Privacy    └── Real-time Data  │
+    │  └── Custom Prompting                             │
+    │                                                   │
+    │  🔄 OpenAI Fallback (Optional)                    │
+    │  └── GPT-4 Compatibility                          │
     └───────────────────────────────────────────────────┘
 ```
 
 ## ✨ Advanced Features
 
-### 🚀 **Hybrid Response System**
-- **Instant Templated Responses**: Sub-second vulnerability summaries with interactive cards
-- **AI Deep Analysis**: Comprehensive security assessment with remediation guidance
-- **Seamless Transition**: Users get immediate feedback, then enhanced AI insights
-- **Context Preservation**: Maintains conversation flow across response types
+### 🚀 **Self-Hosted AI Architecture**
+- **Direct Chat Completions**: Instant responses from your own Llama 3.2 model
+- **Complete Data Privacy**: All AI processing stays on your infrastructure
+- **Intelligent Function Calling**: Automatic package/CVE query detection and execution
+- **Conversation Context**: Maintains chat history for better AI responses
+- **Hybrid Provider Support**: Jetstream primary, OpenAI fallback capability
 
 ### 🎯 **Intelligent Package Analysis**
 - **Multi-Ecosystem Support**: npm, PyPI, Maven, Go, NuGet, RubyGems, Cargo, Composer, Hex, SwiftPM
@@ -57,10 +61,10 @@ BomBot implements a sophisticated hybrid response system that provides both inst
 - **Scalable Architecture**: Handles up to 50 packages per SBOM (serverless optimization)
 
 ### 💬 **Advanced Chat System**
-- **Persistent Threads**: OpenAI Assistant conversation continuity
-- **Real-time Polling**: Non-blocking response delivery with status tracking
+- **Direct Responses**: Immediate AI responses without polling or threads
+- **Conversation History**: Smart context management for multi-turn conversations
 - **Markdown Rendering**: Rich formatted responses with proper spacing
-- **File Upload Integration**: Drag-and-drop SBOM processing with progress tracking
+- **File Upload Integration**: Drag-and-drop SBOM processing with instant AI analysis
 
 ### 🔍 **Smart Vulnerability Cards**
 - **Interactive UI**: Clickable cards with direct OSV.dev links
@@ -76,37 +80,39 @@ BomBot implements a sophisticated hybrid response system that provides both inst
 ```typescript
 // ChatInterface.tsx - Main orchestration component
 - File upload handling (drag-and-drop + file picker)
-- Real-time message polling with exponential backoff
-- Thread management and context preservation
-- Hybrid response coordination
+- Direct AI chat integration with conversation history
+- Instant response handling (no polling required)
+- Smart function call detection and execution
 
-// PackageQueryForm.tsx - Package analysis interface  
-- Ecosystem selection with validation
-- Real-time OSV API integration
-- Severity extraction and normalization
-- Thread setup for follow-up questions
+// AI Client (src/lib/ai-client.ts) - Unified AI interface
+- Jetstream and OpenAI provider support
+- Automatic function call detection for packages/CVEs
+- Manual function execution for Llama 3.2
+- Conversation context management
 
 // ChatMessage.tsx - Dynamic message rendering
-- Markdown vs HTML conditional rendering
-- Vulnerability card generation
+- Markdown rendering with syntax highlighting
+- Vulnerability card generation from AI responses
 - Copy-to-clipboard functionality
 - Responsive design with accessibility
 
 // VulnerabilityCard Component
-- Interactive severity badges
-- Direct OSV.dev linking
-- Package version display
-- Description truncation with expansion
+- Interactive severity badges with color coding
+- Direct OSV.dev linking (not NVD)
+- Package version display with ecosystem info
+- Description truncation with smart expansion
 ```
 
 #### **State Management**
 ```typescript
-// ChatContext.tsx - Centralized state
+// ChatContext.tsx - Centralized state with conversation history
 interface ChatState {
   messages: Message[];
+  conversationHistory: Array<{role: 'user' | 'assistant', content: string}>;
   isLoading: boolean;
   currentThreadId: string | null;
   uploadedFiles: UploadedFile[];
+  userEmail: string | null;
 }
 
 interface Message {
@@ -151,19 +157,37 @@ interface UploadFlow {
   3. Package extraction with ecosystem mapping
   4. Batch OSV API queries (rate-limited)
   5. Vulnerability aggregation and severity normalization
-  6. OpenAI thread creation with structured prompt
-  7. Quick summary generation for instant UI response
-  8. Thread management for follow-up conversations
+  6. Direct AI analysis with structured SBOM data
+  7. Instant AI response generation
+  8. Conversation ID creation for follow-up chats
 }
 
-// Response includes both quick data and AI thread setup
+// Response includes AI analysis and structured data
 interface UploadResponse {
   success: boolean;
-  threadId: string;
-  runId: string;
+  conversationId: string;
+  aiResponse: string; // Direct AI analysis
   vulnerabilitiesFound: number;
-  quickSummary: QuickSummaryData; // For immediate UI display
-  packagesScanned: number;
+  quickSummary: QuickSummaryData;
+  dependencyGraph: DependencyGraph;
+}
+```
+
+##### `/api/chat` - Direct AI Chat Completions
+```typescript
+interface ChatAPI {
+  directResponses: boolean; // No polling required
+  conversationHistory: Array<{role: string, content: string}>;
+  functionCalling: {
+    packageDetection: boolean; // Auto-detects package queries
+    cveDetection: boolean;     // Auto-detects CVE mentions
+    automaticExecution: boolean; // Executes OSV queries
+  };
+  
+  providers: {
+    jetstream: JetstreamConfig; // Primary self-hosted
+    openai: OpenAIConfig;       // Fallback option
+  };
 }
 ```
 
@@ -182,70 +206,58 @@ interface QueryCapabilities {
     affectedPackages: boolean;
   };
   
-  aiIntegration: {
-    threadAttachment: boolean;
-    contextPreservation: boolean;
-    followUpQuestions: boolean;
-  };
+  // Simplified - no AI integration (handled by chat API)
+  directDataReturn: boolean;
 }
 ```
 
-##### `/api/run-status` - AI Response Polling
+##### `/api/run-status` - Legacy Compatibility
 ```typescript
-interface PollingStrategy {
-  maxAttempts: 20;           // Configurable timeout
-  pollingInterval: 1000;     // 1s for chat, 2s for uploads
-  exponentialBackoff: false; // Linear for predictable UX
-  silentTimeout: true;       // No timeout messages
-  statusTracking: {
-    queued: 'waiting';
-    in_progress: 'processing';  
-    completed: 'success';
-    failed: 'error';
-  };
+// Deprecated - kept for backward compatibility
+interface CompatibilityEndpoint {
+  status: 'deprecated';      // Always returns completed
+  message: 'This endpoint is deprecated. Use /api/chat for direct responses.';
 }
 ```
 
-#### **OpenAI Assistant Integration**
+#### **Self-Hosted AI Integration**
 
-##### **Function Capabilities**
+##### **Function Call Detection**
 ```typescript
-interface AssistantFunctions {
-  query_package_vulnerabilities: {
-    description: "Real-time OSV database package queries";
-    parameters: {
-      name: string;
-      ecosystem: EcosystemType;
+interface FunctionDetection {
+  packageQueries: {
+    patterns: RegExp[]; // Detects "Is X safe?", "check package Y"
+    extraction: {
+      packageName: string;
       version?: string;
+      ecosystem: string; // Auto-detected or default npm
     };
   };
   
-  query_cve_details: {
-    description: "CVE-specific vulnerability lookups";
-    parameters: {
-      cve_id: string; // CVE-YYYY-NNNN format
-    };
-  };
-  
-  analyze_sbom_package: {
-    description: "Deep-dive SBOM component analysis";
-    parameters: {
-      package_name: string;
-      include_dependencies?: boolean;
-    };
+  cveQueries: {
+    pattern: /CVE-\d{4}-\d{4,}/gi;
+    directExecution: boolean; // Immediate OSV lookup
   };
 }
 ```
 
-##### **Response Quality Control**
+##### **AI Client Configuration**
 ```typescript
-interface AssistantConfig {
-  model: "gpt-4-turbo-preview";
-  temperature: 0.1;          // High consistency for security data
-  top_p: 0.2;               // Focused vocabulary selection
-  instructions: string;      // Comprehensive security expert prompt
-  tools: AssistantFunction[];
-  response_format: "markdown"; // Rich formatting with OSV.dev links
+interface AIClientConfig {
+  provider: 'jetstream' | 'openai';
+  jetstream: {
+    baseUrl: string;        // Your Jetstream server
+    apiKey: string;         // Authentication
+    model: string;          // Llama model name
+    temperature: 0.7;       // Balanced creativity
+    max_tokens: 2048;       // Response length
+  };
+  openai: {
+    model: "gpt-4";
+    temperature: 0.1;       // High consistency for security
+    max_tokens: 2048;
+  };
+  systemPrompt: string;     // From Instruction Prompt.md
 }
 ```
 
@@ -253,53 +265,60 @@ interface AssistantConfig {
 
 ### Environment Variables
 ```bash
-# Required - OpenAI Integration
-OPENAI_API_KEY=sk-proj-xxxxx           # OpenAI API access
-ASSISTANT_ID=asst_xxxxx                # Pre-configured assistant
+# AI Provider Configuration (Choose One)
+MODEL_PROVIDER=jetstream               # Use 'jetstream' or 'openai'
+
+# Jetstream Configuration (Self-Hosted Llama)
+JETSTREAM_API_KEY=sk-xxxxx            # Your Jetstream API key
+JETSTREAM_BASE_URL=http://server:8080  # Your Jetstream server URL  
+JETSTREAM_MODEL=meta-llama/Llama-3.2-1B-Instruct
+
+# OpenAI Configuration (Fallback)
+OPENAI_API_KEY=sk-proj-xxxxx          # OpenAI API access (optional)
+# Database Configuration (Required)
+NEXT_PUBLIC_SUPABASE_URL=https://xxx.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJxxx
+SUPABASE_SERVICE_ROLE_KEY=eyJxxx
 
 # Optional - Development
 OSV_SCANNER_PATH=/usr/local/bin/osv-scanner  # Local binary path
 NODE_ENV=production                     # Runtime environment
 ```
 
-### OpenAI Assistant Configuration
-```yaml
-Assistant Setup:
-  name: "BomBot Security Analyst"
-  model: "gpt-4-turbo-preview"
-  temperature: 0.1
-  top_p: 0.2
-  
-Instructions: |
-  You are BomBot, an expert cybersecurity analyst specializing in SBOM analysis and vulnerability assessment. 
-  
-  Core Capabilities:
-  1. Real-time vulnerability research using OSV.dev database
-  2. Comprehensive security analysis with business impact assessment
-  3. Prioritized remediation recommendations
-  4. Interactive security consultation with context preservation
-  
-  Link Standards:
-  - ALWAYS use OSV.dev links: https://osv.dev/vulnerability/{ID}
-  - NEVER reference NVD or other databases for links
-  - Maintain consistency across all vulnerability references
-  
-  Response Structure:
-  - Quick summaries for initial queries (brief, actionable)
-  - Detailed analysis when requested (comprehensive, prioritized)
-  - Clear severity communication (CRITICAL/HIGH/MEDIUM/LOW)
-  - Specific remediation steps with version numbers
-  
-  Function Usage:
-  - Proactively query packages when mentioned
-  - Cross-reference CVEs automatically
-  - Provide current vulnerability data
-  - Maintain conversation context across queries
+### Self-Hosted AI Setup
 
-Functions:
-  - query_package_vulnerabilities(name, ecosystem, version?)
-  - query_cve_details(cve_id)
-  - analyze_sbom_package(package_name, include_dependencies?)
+Your **Llama 3.2-1B-Instruct** model is configured with the comprehensive system prompt from `Instruction Prompt.md`, providing:
+
+```yaml
+AI Configuration:
+  model: "meta-llama/Llama-3.2-1B-Instruct"
+  provider: "jetstream" 
+  temperature: 0.7
+  max_tokens: 2048
+  
+Core Capabilities:
+  1. Real-time vulnerability research using OSV.dev database
+  2. Intelligent function call detection (packages/CVEs)
+  3. Manual function execution for Llama compatibility
+  4. Comprehensive security analysis with business impact
+  5. Conversation context preservation across messages
+  
+Data Privacy:
+  - All AI processing on your infrastructure
+  - No external API calls for chat completions
+  - Complete control over model behavior
+  - Custom fine-tuning possible
+  
+Function Detection:
+  - Package queries: "Is lodash safe?", "check express 4.17.1"
+  - CVE queries: "Tell me about CVE-2023-1234"
+  - Automatic OSV API integration
+  - Instant response delivery (no polling)
+
+Fallback Support:
+  - OpenAI GPT-4 available if needed
+  - Seamless provider switching
+  - Same function calling capabilities
 ```
 
 ## 📊 Performance Metrics
@@ -310,16 +329,16 @@ Production Build:
 ├── UI Assets
 │   ├── JavaScript: 520KB → 163KB gzipped (-69%)
 │   ├── CSS: 90KB → 14KB gzipped (-84%)
-│   └── Total: 177KB gzipped (acceptable for feature set)
+│   └── Total: 177KB gzipped (optimized for features)
 │
 ├── API Routes
-│   ├── Shared Runtime: 79.7KB
+│   ├── Shared Runtime: 85KB (includes AI client)
 │   ├── Cold Start: <2s on Vercel
-│   └── Memory Usage: ~128MB per function
+│   └── Memory Usage: ~140MB per function
 │
-└── External Dependencies
+└── Dependencies
     ├── React/UI: ~40KB gzipped
-    ├── OpenAI SDK: ~35KB gzipped  
+    ├── AI Client: ~25KB gzipped (hybrid support)
     ├── Form Processing: ~25KB gzipped
     └── Markdown Rendering: ~20KB gzipped
 ```
@@ -329,15 +348,16 @@ Production Build:
 Response Times (95th percentile):
 ├── Package Queries: <500ms (OSV API latency)
 ├── SBOM Processing: 2-8s (size dependent)
-├── AI Responses: 5-30s (complexity dependent)
-├── Real-time Polling: 1s intervals
+├── AI Chat Responses: 1-5s (direct completion)
+├── Function Calls: <2s (OSV API + AI processing)
 └── UI Interactions: <100ms (client-side)
 
 Scalability Limits:
 ├── File Size: 10MB (Vercel function limit)
-├── SBOM Packages: 50 (rate limiting optimization)
+├── SBOM Packages: 150 (rate limiting optimization)
 ├── Concurrent Users: Unlimited (serverless)
-└── API Rate Limits: OpenAI tier dependent
+├── Jetstream: Your server capacity dependent
+└── AI Rate Limits: Self-hosted = no limits
 ```
 
 ## 🚀 Usage Patterns
@@ -377,7 +397,9 @@ npm install
 
 # Environment setup
 cp .env.example .env
-# Configure OPENAI_API_KEY and ASSISTANT_ID
+# Configure your AI provider:
+# For Jetstream: MODEL_PROVIDER, JETSTREAM_API_KEY, etc.
+# For OpenAI: OPENAI_API_KEY (fallback)
 
 # Optional: Install OSV Scanner locally
 brew install osv-scanner  # macOS
@@ -456,7 +478,7 @@ Security Measures:
 
 ## 🏁 Quick Start
 
-1. **Deploy**: [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/kakderishikesh/BomBot-Chat)
+1. **Deploy**: Use Vercel or similar platform for deployment
 2. **Configure**: Add `OPENAI_API_KEY` and `ASSISTANT_ID` to Vercel environment
 3. **Use**: Upload SBOM files and start chatting with your AI security expert!
 

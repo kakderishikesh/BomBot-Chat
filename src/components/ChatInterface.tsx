@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Shield, Send, Paperclip, Plus, MessageSquare } from 'lucide-react';
 
 const ChatInterface = () => {
-  const { messages, isLoading, addMessage, clearChat, currentThreadId, sessionId, messageIndex, setLoading, setCurrentThreadId, addUploadedFile, logChatMessage, userEmail, setUserEmail } = useChat();
+  const { messages, isLoading, addMessage, clearChat, currentThreadId, sessionId, messageIndex, setLoading, setCurrentThreadId, addUploadedFile, logChatMessage, userEmail, setUserEmail, conversationHistory } = useChat();
   const [inputText, setInputText] = useState('');
   const [isDragOver, setIsDragOver] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -115,7 +115,7 @@ const ChatInterface = () => {
 
       // Add file to context
       const uploadedFile = {
-        id: uploadResult.threadId || Math.random().toString(36).substr(2, 9),
+        id: uploadResult.conversationId || Math.random().toString(36).substr(2, 9),
         name: file.name,
         size: file.size,
         type: file.type,
@@ -125,60 +125,43 @@ const ChatInterface = () => {
 
       addUploadedFile(uploadedFile);
 
-      // Set the thread ID for this conversation
-      if (uploadResult.threadId) {
-        setCurrentThreadId(uploadResult.threadId);
+      // Set the conversation ID for this conversation
+      if (uploadResult.conversationId) {
+        setCurrentThreadId(uploadResult.conversationId);
       }
 
-      // Show quick templated response first
-      const { quickSummary, vulnerabilitiesFound, packagesScanned } = uploadResult;
-      let responseContent = '';
+      // Use AI response from upload API
+      const { quickSummary, vulnerabilitiesFound, aiResponse } = uploadResult;
       let vulnerabilities = [];
 
-      if (vulnerabilitiesFound > 0) {
-        responseContent = `🔍 **Quick Summary for "${file.name}"**\n\n`;
-        responseContent += `📊 **Overview:**\n`;
-        responseContent += `- Packages scanned: ${packagesScanned}\n`;
-        responseContent += `- Packages with vulnerabilities: ${quickSummary.packagesWithVulns}\n`;
-        responseContent += `- Total vulnerabilities: ${quickSummary.totalVulns}\n`;
-        responseContent += `- Dependency relationships: ${quickSummary.dependenciesFound || 0}\n\n`;
-
-        if (quickSummary.topVulnerabilities.length > 0) {
-          responseContent += `🚨 **Top 5 Vulnerable Packages:**\n`;
-          quickSummary.topVulnerabilities.forEach((pkg, index) => {
-            responseContent += `${index + 1}. **${pkg.package}@${pkg.version}** - ${pkg.vulns.length} issue${pkg.vulns.length > 1 ? 's' : ''}\n`;
-          });
-          responseContent += `\n`;
-
-          // Create vulnerability cards for display
-          vulnerabilities = quickSummary.topVulnerabilities.flatMap(pkg => 
-            pkg.vulns.map(vuln => ({
-              id: vuln.id,
-              severity: vuln.severity,
-              package: pkg.package,
-              version: pkg.version,
-              description: vuln.summary
-            }))
-          );
-        }
-
-        responseContent += `💡 *Ask me "detailed analysis", "executive summary", or "dependency analysis" for all ${quickSummary.totalVulns} vulnerabilities and comprehensive security insights*`;
-      } else {
-        responseContent = `✅ **Good news!** SBOM analysis complete for "${file.name}"\n\n`;
-        responseContent += `📊 **Results:**\n`;
-        responseContent += `- Packages scanned: ${packagesScanned}\n`;
-        responseContent += `- Vulnerabilities found: 0\n\n`;
-        responseContent += `🛡️ Your SBOM appears to be secure with no known vulnerabilities detected!\n\n`;
-        responseContent += `💡 *You can ask me questions about specific packages or security recommendations*`;
+      // Create vulnerability cards for display if we have vulnerabilities
+      if (vulnerabilitiesFound > 0 && quickSummary.topVulnerabilities.length > 0) {
+        vulnerabilities = quickSummary.topVulnerabilities.flatMap(pkg => 
+          pkg.vulns.map(vuln => ({
+            id: vuln.id,
+            severity: vuln.severity,
+            package: pkg.package,
+            version: pkg.version,
+            description: vuln.summary
+          }))
+        );
       }
 
-      // Add quick templated response
+      // Add AI response
       addMessage({
         type: 'assistant',
-        content: responseContent,
+        content: aiResponse || `✅ **SBOM Analysis Complete**
+
+Successfully analyzed "${file.name}" and found:
+- **${uploadResult.packagesScanned} packages scanned**
+- **${quickSummary?.packagesWithVulns || 0} packages with vulnerabilities**
+- **${vulnerabilitiesFound} total vulnerabilities found**
+
+Ask me questions about specific packages or request a "detailed analysis" for more insights.`,
         vulnerabilities: vulnerabilities.length > 0 ? vulnerabilities : undefined,
         totalVulnerabilities: vulnerabilitiesFound > 0 ? quickSummary.totalVulns : undefined,
         dependencyGraph: uploadResult.dependencyGraph || undefined,
+        useMarkdown: true,
       });
 
       // Thread is already set up for follow-up questions via setCurrentThreadId above
@@ -194,58 +177,7 @@ const ChatInterface = () => {
     }
   };
 
-  const pollForResponse = async (threadId: string, runId: string, fileName: string) => {
-    const maxAttempts = 90; // Maximum polling attempts (90 * 2 seconds = 3 minutes)
-    let attempts = 0;
 
-    const poll = async () => {
-      try {
-        const response = await fetch(`/api/run-status?threadId=${threadId}&runId=${runId}`);
-        
-        if (!response.ok) {
-          throw new Error('Failed to check analysis status');
-        }
-
-        const result = await response.json();
-
-        if (result.completed) {
-          if (result.status === 'completed') {
-            // Add the assistant's analysis response
-            addMessage({
-              type: 'assistant',
-              content: result.response || `🔍 Analysis complete for "${fileName}"! The scan has been processed. You can ask me questions about the vulnerabilities found or request specific package information.`,
-            });
-          } else if (result.status === 'failed') {
-            addMessage({
-              type: 'assistant',
-              content: `❌ Analysis failed for "${fileName}". Error: ${result.error || 'Unknown error occurred during analysis.'}`,
-            });
-          }
-          return;
-        }
-
-        // Continue polling if not completed and under max attempts
-        attempts++;
-        if (attempts < maxAttempts) {
-          setTimeout(poll, 2000); // Poll every 2 seconds
-        } else {
-          addMessage({
-            type: 'assistant',
-            content: `⏱️ Analysis for "${fileName}" is taking longer than expected. The scan is still running in the background. You can ask me questions or try uploading the file again.`,
-          });
-        }
-      } catch (error) {
-        console.error('Upload polling error:', error);
-        addMessage({
-          type: 'assistant',
-          content: `⚠️ There was an issue getting the analysis results for "${fileName}".`,
-        });
-      }
-    };
-
-    // Start polling after a short delay
-    setTimeout(poll, 2000);
-  };
 
   // Auto-detect packages and CVEs in messages
   const detectAndQuery = (text: string) => {
@@ -265,22 +197,20 @@ const ChatInterface = () => {
     return null;
   };
 
-  // Function to send message to OpenAI Assistant
+  // Function to send message to AI
   const sendToAssistant = async (message: string) => {
-    if (!currentThreadId) return false;
-
     try {
       setLoading(true);
       
-      // Send message to the existing thread
+      // Send message with conversation history
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          threadId: currentThreadId,
           message: message,
+          conversationHistory: conversationHistory,
           sessionId,
           messageIndex,
           userEmail,
@@ -288,86 +218,41 @@ const ChatInterface = () => {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to send message to assistant');
+        throw new Error('Failed to send message to AI');
       }
 
       const result = await response.json();
 
-      if (result.runId) {
-        // Poll for the assistant's response
-        pollForAssistantResponse(currentThreadId, result.runId);
+      if (result.success && result.response) {
+        // Add AI response immediately
+        addMessage({
+          type: 'assistant',
+          content: result.response,
+          useMarkdown: true,
+        });
+        
+        // Set current thread ID if it was created
+        if (result.conversationId && !currentThreadId) {
+          setCurrentThreadId(result.conversationId);
+        }
+        
+        setLoading(false);
         return true;
       }
     } catch (error) {
-      console.error('Error sending to assistant:', error);
+      console.error('Error sending to AI:', error);
       addMessage({
         type: 'assistant',
         content: '⚠️ Sorry, I encountered an issue processing your message. Please try again.',
         useMarkdown: true,
       });
-      setLoading(false); // Only turn off loading on error
+      setLoading(false);
     }
     
     return false;
   };
 
-  // Function to poll for assistant response
-  const pollForAssistantResponse = async (threadId: string, runId: string) => {
-    const maxAttempts = 180; // Maximum polling attempts (180 * 1 second = 3 minutes)
-    let attempts = 0;
 
-    const poll = async () => {
-      try {
-        const response = await fetch(`/api/run-status?threadId=${threadId}&runId=${runId}&sessionId=${sessionId}&messageIndex=${messageIndex}`);
-        
-        if (!response.ok) {
-          throw new Error('Failed to check assistant response');
-        }
-
-        const result = await response.json();
-
-        if (result.completed) {
-          setLoading(false); // Turn off loading when response is complete
-          
-          if (result.status === 'completed' && result.response) {
-            addMessage({
-              type: 'assistant',
-              content: result.response,
-              useMarkdown: true,
-            });
-          } else if (result.status === 'failed') {
-            addMessage({
-              type: 'assistant',
-              content: `❌ I encountered an issue processing your message: ${result.error || 'Unknown error occurred.'}`,
-              useMarkdown: true,
-            });
-          }
-          return;
-        }
-
-        // Continue polling if not completed
-        attempts++;
-        if (attempts < maxAttempts) {
-          setTimeout(poll, 1000); // Poll every 1 second for chat responses
-        } else {
-          setLoading(false); // Turn off loading on timeout
-          // Just stop polling silently - no timeout message
-          console.log('Chat polling timed out, but continuing to wait...');
-        }
-      } catch (error) {
-        setLoading(false); // Turn off loading on error
-        console.error('Chat polling error:', error);
-        addMessage({
-          type: 'assistant',
-          content: '⚠️ There was an issue getting my response. Please try again.',
-          useMarkdown: true,
-        });
-      }
-    };
-
-    // Start polling immediately for chat responses
-    poll();
-  };
 
   const handleSendMessage = async () => {
     if (!inputText.trim()) return;
@@ -381,42 +266,15 @@ const ChatInterface = () => {
     const userMessage = inputText;
     setInputText('');
 
-    // If there's an active thread, send to the real AI assistant
-    if (currentThreadId) {
-      const sent = await sendToAssistant(userMessage);
-      if (sent) {
-        return;
-      }
-    }
-
-    // Fallback to simulated responses (for when there's no active thread)
-    // Detect if message contains package or CVE mentions
-    const detection = detectAndQuery(userMessage);
-    
-    if (detection) {
-      if (detection.type === 'cve') {
-        setTimeout(() => {
-          addMessage({
-            type: 'assistant',
-            content: `🛡️ Looking up ${detection.value}...\n\n${detection.value} is a HIGH severity vulnerability affecting multiple packages. It was published in 2023 and has a CVSS score of 8.1.\n\n**Affected packages:**\n- express@4.17.1 and earlier\n- Related middleware packages\n\n**Recommendation:** Update to the latest version of Express (4.18.0+) which includes the security patch.`,
-          });
-        }, 1500);
-      } else if (detection.type === 'package') {
-        setTimeout(() => {
-          addMessage({
-            type: 'assistant',
-            content: `📦 Querying package: ${detection.value}...\n\nGood news! The latest version of ${detection.value} appears to be secure with no known critical vulnerabilities. However, I recommend always using the latest stable version.\n\n**Latest version:** Check npm registry for current version\n**Security status:** ✅ No critical vulnerabilities found\n\nWould you like me to check a specific version of ${detection.value}?`,
-          });
-        }, 1500);
-      }
-    } else {
-      // General response
-      setTimeout(() => {
-        addMessage({
-          type: 'assistant',
-          content: "Please wait for 3 seconds before sending your message. The SBOM information is being passed to the AI.",
-        });
-      }, 1000);
+    // Always send to the AI assistant
+    const sent = await sendToAssistant(userMessage);
+    if (!sent) {
+      // Fallback response if AI fails
+      addMessage({
+        type: 'assistant',
+        content: "I apologize, but I'm having trouble processing your message right now. Please try again in a moment.",
+        useMarkdown: true,
+      });
     }
   };
 

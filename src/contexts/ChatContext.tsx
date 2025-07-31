@@ -52,6 +52,7 @@ interface ChatContextType {
   messageIndex: number;
   isLoading: boolean;
   userEmail: string | null;
+  conversationHistory: Array<{role: 'user' | 'assistant', content: string}>;
   addMessage: (message: Omit<Message, 'id' | 'timestamp'>) => void;
   addUploadedFile: (file: UploadedFile) => void;
   setCurrentThreadId: (threadId: string | null) => void;
@@ -78,6 +79,7 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
   const [messageIndex, setMessageIndex] = useState<number>(0);
   const [isLoading, setIsLoading] = useState(false);
   const [userEmail, setUserEmailState] = useState<string | null>(null);
+  const [conversationHistory, setConversationHistory] = useState<Array<{role: 'user' | 'assistant', content: string}>>([]);
 
   // Initialize session and check for stored email on component mount
   useEffect(() => {
@@ -100,6 +102,13 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
       timestamp: new Date(),
     };
     setMessages(prev => [...prev, newMessage]);
+    
+    // Update conversation history for AI context
+    setConversationHistory(prev => [...prev, {
+      role: message.type === 'user' ? 'user' : 'assistant',
+      content: message.content
+    }]);
+    
     setMessageIndex(prev => prev + 1);
   };
 
@@ -121,6 +130,7 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
     setMessages([]);
     setUploadedFiles([]);
     setCurrentThreadId(null);
+    setConversationHistory([]);
     setMessageIndex(0);
   };
 
@@ -158,6 +168,7 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
       messageIndex,
       isLoading,
       userEmail,
+      conversationHistory,
       addMessage,
       addUploadedFile,
       setCurrentThreadId,

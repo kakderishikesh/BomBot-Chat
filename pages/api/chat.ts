@@ -1,15 +1,11 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { OpenAI } from 'openai';
 import { supabaseServer } from '@/lib/supabase-server';
 import { v4 as uuidv4 } from 'uuid';
-
-const openai = new OpenAI({ 
-  apiKey: process.env.OPENAI_API_KEY! 
-});
+import { chatCompletion, detectFunctionCall, executeFunctionCall, ChatMessage } from '@/lib/ai-client';
 
 interface ChatRequest {
   message: string;
-  threadId: string;
+  conversationHistory?: ChatMessage[];
   sessionId: string;
   messageIndex: number;
   userEmail?: string;
@@ -20,23 +16,24 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(405).json({ error: 'Method Not Allowed' });
   }
 
-  const { message, threadId, sessionId, messageIndex, userEmail }: ChatRequest = req.body;
+  const { message, conversationHistory = [], sessionId, messageIndex, userEmail }: ChatRequest = req.body;
 
-  if (!message || !threadId || !sessionId || messageIndex === undefined) {
+  if (!message || !sessionId || messageIndex === undefined) {
     return res.status(400).json({ 
-      error: 'Message, threadId, sessionId, and messageIndex are required' 
+      error: 'Message, sessionId, and messageIndex are required' 
     });
   }
 
   try {
     // Log user message to Supabase
+    const conversationId = uuidv4();
     try {
-              await supabaseServer
+      await supabaseServer
         .from('chat_logs')
         .insert([{
           id: uuidv4(),
           session_id: sessionId,
-          thread_id: threadId,
+          thread_id: conversationId,
           message_index: messageIndex,
           message_type: 'user',
           user_message: message,
@@ -53,21 +50,69 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       // Continue with the chat even if logging fails
     }
 
-    // Send the message to the existing thread
-    await openai.beta.threads.messages.create(threadId, {
-      role: 'user',
-      content: message
-    });
+    // Check if the message requires function calling
+    const functionCall = detectFunctionCall(message);
+    
+    // Build conversation history
+    const messages: ChatMessage[] = [
+      ...conversationHistory,
+      { role: 'user', content: message }
+    ];
 
-    // Create a run with the assistant
-    const run = await openai.beta.threads.runs.create(threadId, {
-      assistant_id: process.env.ASSISTANT_ID!,
-    });
+    let aiResponse = '';
+    
+    if (functionCall) {
+      try {
+        // Execute the function call
+        const protocol = req.headers['x-forwarded-proto'] || 'http';
+        const host = req.headers.host;
+        const baseUrl = `${protocol}://${host}`;
+        
+        const functionResult = await executeFunctionCall(functionCall.function, functionCall.args, baseUrl);
+        
+        // Add function result to conversation and get AI response
+        const messagesWithFunction: ChatMessage[] = [
+          ...messages,
+          { 
+            role: 'user', 
+            content: `Function ${functionCall.function} returned: ${functionResult}\n\nPlease provide a clear, actionable summary of this vulnerability data with OSV.dev links. Keep it brief and suggest I can ask for "detailed analysis" if needed.`
+          }
+        ];
+        
+        const completion = await chatCompletion(messagesWithFunction);
+        aiResponse = completion.content;
+        
+      } catch (functionError) {
+        console.error('Function execution error:', functionError);
+        // Fall back to regular chat completion
+        const completion = await chatCompletion(messages);
+        aiResponse = completion.content;
+      }
+    } else {
+      // Regular chat completion
+      const completion = await chatCompletion(messages);
+      aiResponse = completion.content;
+    }
+
+    // Log AI response to Supabase
+    try {
+      await supabaseServer
+        .from('chat_logs')
+        .update({
+          ai_response: aiResponse,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('session_id', sessionId)
+        .eq('message_index', messageIndex);
+    } catch (logError) {
+      console.error('Error logging AI response:', logError);
+      // Continue even if logging fails
+    }
 
     return res.status(200).json({ 
       success: true,
-      runId: run.id,
-      threadId: threadId,
+      response: aiResponse,
+      conversationId: conversationId,
       message: message,
       sessionId: sessionId,
       messageIndex: messageIndex
@@ -76,7 +121,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   } catch (error) {
     console.error('Chat API error:', error);
     res.status(500).json({ 
-      error: 'Failed to send message to assistant',
+      error: 'Failed to process chat message',
       details: error instanceof Error ? error.message : 'Unknown error'
     });
   }
