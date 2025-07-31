@@ -99,37 +99,18 @@ export function detectFunctionCall(message: string): { function: string; args: a
   return null;
 }
 
-// Estimate token count for context limit checking
-function estimateTokenCount(messages: ChatMessage[]): number {
-  const totalChars = messages.reduce((sum, msg) => sum + msg.content.length, 0);
-  // Rough estimate: ~4 characters per token for English text
-  return Math.ceil(totalChars / 4);
-}
-
 // Chat completion for Jetstream
 export async function jetstreamChatCompletion(messages: ChatMessage[]): Promise<ChatCompletionResponse> {
   const baseUrl = process.env.JETSTREAM_BASE_URL;
   const apiKey = process.env.JETSTREAM_API_KEY;
   const model = process.env.JETSTREAM_MODEL;
   
-  // Check estimated token count before sending
-  const estimatedTokens = estimateTokenCount(messages);
-  const CONTEXT_LIMIT = 4000; // Conservative estimate for Llama 3.2-1B
-  
   console.log('Jetstream API call:', {
     baseUrl,
     model,
     messageCount: messages.length,
-    estimatedTokens,
-    contextLimit: CONTEXT_LIMIT,
     hasApiKey: !!apiKey
   });
-
-  // Check if we're approaching the context limit
-  if (estimatedTokens > CONTEXT_LIMIT) {
-    console.warn(`Context limit warning: ${estimatedTokens} tokens estimated, limit: ${CONTEXT_LIMIT}`);
-    throw new Error('CONTEXT_LIMIT_EXCEEDED');
-  }
 
   const requestBody = {
     model: model,
@@ -161,16 +142,7 @@ export async function jetstreamChatCompletion(messages: ChatMessage[]): Promise<
     const errorBody = await response.text();
     console.error('Jetstream API error response:', errorBody);
     
-    // Check for context length errors
-    if (response.status === 400 && (
-      errorBody.includes('context') || 
-      errorBody.includes('token') || 
-      errorBody.includes('length') ||
-      errorBody.includes('limit')
-    )) {
-      throw new Error('CONTEXT_LIMIT_EXCEEDED');
-    }
-    
+    // Let all errors bubble up naturally - don't try to handle context limits
     throw new Error(`Jetstream API error: ${response.status} ${response.statusText} - ${errorBody}`);
   }
 

@@ -515,30 +515,14 @@ ${existingThreadId ?
 
     // Get AI analysis
     let aiResponse = '';
-    let isContextLimitError = false;
     try {
       const completion = await chatCompletion([sbomAnalysisMessage]);
       aiResponse = completion.content;
     } catch (aiError) {
       console.error('Failed to get AI analysis:', aiError);
       
-      // Check if it's a context limit error
-      if (aiError instanceof Error && aiError.message === 'CONTEXT_LIMIT_EXCEEDED') {
-        isContextLimitError = true;
-        aiResponse = `🤖 **SBOM Analysis Complete - Context Limit Reached**
-
-I've successfully scanned your SBOM file "${fileName}" and found:
-- **${packagesToScan.length} packages scanned**
-- **${vulnPackages} packages with vulnerabilities**
-- **${totalVulns} total vulnerabilities found**
-
-However, our conversation has gotten quite long, and I've reached my memory limit. To get detailed AI analysis of these results:
-
-**Please start a new chat** and re-upload this SBOM file for comprehensive AI-powered security insights.
-
-**Current scan results are ready** - you can still see the vulnerability data above, but for detailed analysis and recommendations, a fresh conversation will work best! 🚀`;
-      } else {
-        aiResponse = `✅ **SBOM Analysis Complete**
+      // Provide fallback message if AI analysis fails
+      aiResponse = `✅ **SBOM Analysis Complete**
 
 I've successfully scanned your SBOM file "${fileName}" and found:
 - **${packagesToScan.length} packages scanned**
@@ -552,7 +536,6 @@ The raw scan data has been processed. You can ask me specific questions about:
 - "Show me detailed analysis"
 
 I'm ready to help you understand and prioritize these security findings.`;
-      }
     }
 
     // Log file upload to Supabase if session info is provided
@@ -592,7 +575,6 @@ I'm ready to help you understand and prioritize these security findings.`;
       success: true,
       conversationId: conversationId,
       aiResponse: aiResponse,
-      isContextLimitError: isContextLimitError,
       fileName: fileName,
       packagesScanned: packagesToScan.length,
       totalPackages: packages.length,

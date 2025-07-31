@@ -197,17 +197,7 @@ Ask me questions about specific packages or request a "detailed analysis" for mo
         useMarkdown: true,
       });
 
-      // Handle context limit error for uploads too
-      if (uploadResult.isContextLimitError) {
-        setTimeout(() => {
-          const newChatButton = document.querySelector('[data-clear-chat]');
-          if (newChatButton) {
-            newChatButton.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            newChatButton.classList.add('animate-pulse');
-            setTimeout(() => newChatButton.classList.remove('animate-pulse'), 3000);
-          }
-        }, 1000);
-      }
+
 
       // Thread is already set up for follow-up questions via setCurrentThreadId above
 
@@ -281,19 +271,7 @@ Ask me questions about specific packages or request a "detailed analysis" for mo
           setCurrentThreadId(result.conversationId);
         }
         
-        // If this is a context limit error, show additional UI hints
-        if (result.isContextLimitError) {
-          // Add visual indicator and auto-scroll to "New Chat" button
-          setTimeout(() => {
-            const newChatButton = document.querySelector('[data-clear-chat]');
-            if (newChatButton) {
-              newChatButton.scrollIntoView({ behavior: 'smooth', block: 'center' });
-              // Add a gentle highlight effect
-              newChatButton.classList.add('animate-pulse');
-              setTimeout(() => newChatButton.classList.remove('animate-pulse'), 3000);
-            }
-          }, 1000);
-        }
+
         
         setLoading(false);
         return true;
