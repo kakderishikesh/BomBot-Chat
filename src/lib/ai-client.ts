@@ -241,10 +241,26 @@ export async function executeFunctionCall(functionName: string, args: any, baseU
         });
         
         if (!packageResponse.ok) {
+          console.error(`Package query failed: ${packageResponse.status} for ${args.name}@${args.version || 'latest'}`);
           throw new Error(`Package query failed: ${packageResponse.status}`);
         }
         
         const packageData = await packageResponse.json();
+        
+        // Handle OSV API warnings (when API was temporarily unavailable)
+        if (packageData.warning) {
+          return `⚠️ **OSV API Notice**: ${packageData.warning}
+          
+The vulnerability database is temporarily unavailable, so I couldn't check for vulnerabilities in **${args.name}** right now. 
+
+**What you can do:**
+- Try asking again in a few minutes
+- Check directly at: https://osv.dev/list?q=${encodeURIComponent(args.name)}
+- The package may still be safe to use, but verification isn't possible right now
+
+This is a temporary issue with the external vulnerability database, not with your SBOM analysis.`;
+        }
+        
         return JSON.stringify(packageData, null, 2);
         
       case 'query_cve_details':
@@ -257,10 +273,26 @@ export async function executeFunctionCall(functionName: string, args: any, baseU
         });
         
         if (!cveResponse.ok) {
+          console.error(`CVE query failed: ${cveResponse.status} for ${args.cve_id}`);
           throw new Error(`CVE query failed: ${cveResponse.status}`);
         }
         
         const cveData = await cveResponse.json();
+        
+        // Handle OSV API warnings (when API was temporarily unavailable)
+        if (cveData.warning) {
+          return `⚠️ **OSV API Notice**: ${cveData.warning}
+          
+The vulnerability database is temporarily unavailable, so I couldn't retrieve details for **${args.cve_id}** right now.
+
+**What you can do:**
+- Try asking again in a few minutes  
+- Check directly at: https://osv.dev/vulnerability/${args.cve_id}
+- Look up the CVE on other databases like NVD
+
+This is a temporary issue with the external vulnerability database.`;
+        }
+        
         return JSON.stringify(cveData, null, 2);
         
       default:
