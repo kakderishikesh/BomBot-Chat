@@ -147,7 +147,15 @@ const ChatInterface = () => {
         );
       }
 
-      // Add AI response
+      // First add the SBOM data message to conversation history (hidden from UI)
+      // This ensures the AI remembers the SBOM context for follow-up questions
+      addMessage({
+        type: 'user',
+        content: `I've uploaded an SBOM file "${file.name}" with ${uploadResult.totalPackages} packages. Here's the analysis data: [SBOM data provided during upload - ${uploadResult.packagesScanned} packages scanned, ${vulnerabilitiesFound} vulnerabilities found]`,
+        useMarkdown: false,
+      });
+
+      // Then add AI response
       addMessage({
         type: 'assistant',
         content: aiResponse || `✅ **SBOM Analysis Complete**
