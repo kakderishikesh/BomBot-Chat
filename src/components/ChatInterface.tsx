@@ -149,9 +149,34 @@ const ChatInterface = () => {
 
       // First add the SBOM data message to conversation history (hidden from UI)
       // This ensures the AI remembers the SBOM context for follow-up questions
+      const sbomContextData = {
+        fileName: file.name,
+        totalPackages: uploadResult.totalPackages,
+        packagesScanned: uploadResult.packagesScanned,
+        vulnerabilitiesFound: vulnerabilitiesFound,
+        packagesWithVulns: quickSummary?.packagesWithVulns || 0,
+        dependencyRelationships: uploadResult.dependencyRelationships || 0,
+        vulnerabilityDetails: quickSummary?.topVulnerabilities || []
+      };
+
       addMessage({
         type: 'user',
-        content: `I've uploaded an SBOM file "${file.name}" with ${uploadResult.totalPackages} packages. Here's the analysis data: [SBOM data provided during upload - ${uploadResult.packagesScanned} packages scanned, ${vulnerabilitiesFound} vulnerabilities found]`,
+        content: `I've uploaded an SBOM file "${file.name}" with ${uploadResult.totalPackages} packages. Here's the complete analysis data:
+
+**SBOM Summary:**
+- Total packages: ${uploadResult.totalPackages}
+- Packages scanned: ${uploadResult.packagesScanned}
+- Packages with vulnerabilities: ${quickSummary?.packagesWithVulns || 0}
+- Total vulnerabilities found: ${vulnerabilitiesFound}
+- Dependency relationships: ${uploadResult.dependencyRelationships || 0}
+
+**Vulnerable Packages Details:**
+${quickSummary?.topVulnerabilities?.map(pkg => 
+  `• **${pkg.package}@${pkg.version}** - ${pkg.vulns.length} vulnerabilities:
+${pkg.vulns.map(vuln => `  - ${vuln.id} (${vuln.severity}): ${vuln.summary}`).join('\n')}`
+).join('\n') || 'No vulnerabilities found'}
+
+This data is available for follow-up questions about specific packages, CVEs, or security analysis.`,
         useMarkdown: false,
       });
 
