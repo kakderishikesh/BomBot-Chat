@@ -164,6 +164,18 @@ Ask me questions about specific packages or request a "detailed analysis" for mo
         useMarkdown: true,
       });
 
+      // Handle context limit error for uploads too
+      if (uploadResult.isContextLimitError) {
+        setTimeout(() => {
+          const newChatButton = document.querySelector('[data-clear-chat]');
+          if (newChatButton) {
+            newChatButton.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            newChatButton.classList.add('animate-pulse');
+            setTimeout(() => newChatButton.classList.remove('animate-pulse'), 3000);
+          }
+        }, 1000);
+      }
+
       // Thread is already set up for follow-up questions via setCurrentThreadId above
 
     } catch (error) {
@@ -234,6 +246,20 @@ Ask me questions about specific packages or request a "detailed analysis" for mo
         // Set current thread ID if it was created
         if (result.conversationId && !currentThreadId) {
           setCurrentThreadId(result.conversationId);
+        }
+        
+        // If this is a context limit error, show additional UI hints
+        if (result.isContextLimitError) {
+          // Add visual indicator and auto-scroll to "New Chat" button
+          setTimeout(() => {
+            const newChatButton = document.querySelector('[data-clear-chat]');
+            if (newChatButton) {
+              newChatButton.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              // Add a gentle highlight effect
+              newChatButton.classList.add('animate-pulse');
+              setTimeout(() => newChatButton.classList.remove('animate-pulse'), 3000);
+            }
+          }, 1000);
         }
         
         setLoading(false);
@@ -313,6 +339,7 @@ Ask me questions about specific packages or request a "detailed analysis" for mo
               variant="outline"
               size="sm"
               className="flex items-center space-x-2 text-gray-600 hover:text-gray-900"
+              data-clear-chat
             >
               <Plus className="h-4 w-4" />
               <span>New Chat</span>

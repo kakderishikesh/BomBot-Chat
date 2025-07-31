@@ -357,7 +357,8 @@ Scalability Limits:
 ├── SBOM Packages: 150 (rate limiting optimization)
 ├── Concurrent Users: Unlimited (serverless)
 ├── Jetstream: Your server capacity dependent
-└── AI Rate Limits: Self-hosted = no limits
+├── AI Rate Limits: Self-hosted = no limits
+└── Context Window: ~4,000 tokens (automatic management)
 ```
 
 ## 🚀 Usage Patterns
@@ -383,6 +384,116 @@ Scalability Limits:
 5. Deep-dive: "Give me detailed analysis of these vulnerabilities"
 6. Get technical implementation guidance
 ```
+
+## ⚠️ **Context Window Management**
+
+Your self-hosted **Llama 3.2-1B-Instruct** model has a context window limit (~4,000 tokens) that ensures optimal performance but requires conversation management for extended sessions.
+
+### **Understanding Context Limits**
+
+```typescript
+Context Window Breakdown:
+├── System Prompt: ~400 tokens (BomBot instructions)
+├── Conversation History: Variable (grows with each message)
+├── Current Message: ~50-200 tokens
+└── Response Generation: ~200-800 tokens
+
+Typical Limits:
+├── Short messages: ~40 exchanges before limit
+├── SBOM discussions: ~15-25 exchanges before limit  
+├── Technical conversations: ~20-30 exchanges before limit
+└── File upload conversations: ~10-20 exchanges before limit
+```
+
+### **🤖 Automatic Context Management**
+
+BomBot **automatically detects** when approaching context limits and provides user-friendly guidance:
+
+**For Chat Messages:**
+```
+🤖 Context Limit Reached
+
+I've reached my conversation memory limit! Our chat has gotten quite long 
+and I need to start fresh to continue helping you effectively.
+
+What to do next:
+- Click the "✚ New Chat" button to start a fresh conversation
+- I'll be ready to help with your security analysis questions
+- You can re-upload any SBOM files if needed
+
+Don't worry - starting fresh won't affect my ability to help you! 🚀
+```
+
+**For SBOM Uploads:**
+```
+🤖 SBOM Analysis Complete - Context Limit Reached
+
+I've successfully scanned your SBOM file and found vulnerabilities, 
+but our conversation has gotten quite long.
+
+Please start a new chat and re-upload this SBOM file for comprehensive 
+AI-powered security insights.
+
+Current scan results are ready - you can still see the vulnerability data! 🚀
+```
+
+### **🎯 Smart User Experience**
+
+When context limits are reached:
+✅ **Friendly messaging**: No technical errors, clear guidance  
+✅ **Visual hints**: "✚ New Chat" button pulses and auto-scrolls into view  
+✅ **Data preservation**: SBOM scan results remain visible  
+✅ **Instant recovery**: One click to start fresh conversation  
+✅ **Full functionality**: All features work immediately in new chat  
+
+### **💡 Best Practices for Long Sessions**
+
+```typescript
+Conversation Management Tips:
+├── Regular breaks: Start new chat every 20-30 exchanges
+├── Topic separation: New chat for different SBOM files  
+├── Complex analysis: Break into focused conversations
+└── Multi-file analysis: Upload files in separate chats for detailed comparison
+
+Optimal Workflow:
+1. Upload SBOM → Get analysis → Ask follow-up questions
+2. When context limit reached → Start new chat
+3. Re-upload same SBOM → Continue with fresh context
+4. Repeat for additional files or in-depth analysis
+```
+
+### **🔧 Technical Implementation**
+
+```typescript
+// Context limit detection and handling
+Token Estimation: ~4 characters per token
+Limit Threshold: 4,000 tokens (conservative)
+Error Handling: CONTEXT_LIMIT_EXCEEDED
+User Response: Friendly guidance + UI hints
+Recovery: Immediate new chat capability
+
+// Monitoring in logs
+Console Output:
+├── Token estimation before each request
+├── Context limit warnings when approaching
+├── Graceful fallback messages
+└── UI hint activation status
+```
+
+### **🚀 Why This Approach Works**
+
+**Advantages over complex context management:**
+- ✅ **Reliable**: No risk of losing important context through truncation
+- ✅ **Predictable**: Users always know when they need to restart  
+- ✅ **Simple**: One-click recovery without confusion
+- ✅ **Effective**: Fresh context often provides better analysis
+- ✅ **Transparent**: Clear communication about limitations
+
+**Perfect for security workflows:**
+- Each SBOM analysis gets full AI attention
+- No risk of mixed context between different files
+- Clear separation between different security assessments
+- Optimal performance maintained throughout session
 
 ## 🔄 Development Workflow
 

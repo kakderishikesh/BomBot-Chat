@@ -24,9 +24,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
   }
 
+  // Generate conversation ID for this chat
+  const conversationId = uuidv4();
+  
   try {
     // Log user message to Supabase
-    const conversationId = uuidv4();
     try {
       await supabaseServer
         .from('chat_logs')
@@ -120,6 +122,35 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   } catch (error) {
     console.error('Chat API error:', error);
+    
+    // Handle context limit exceeded error with friendly message
+    if (error instanceof Error && error.message === 'CONTEXT_LIMIT_EXCEEDED') {
+      return res.status(200).json({ 
+        success: true,
+        response: `🤖 **Context Limit Reached**
+
+I've reached my conversation memory limit! Our chat has gotten quite long and I need to start fresh to continue helping you effectively.
+
+**What this means:**
+- The AI model can only remember a certain amount of conversation history
+- We've hit that limit after our productive discussion
+
+**What to do next:**
+- Click the "✚ New Chat" button to start a fresh conversation
+- I'll be ready to help with your security analysis questions
+- You can re-upload any SBOM files if needed
+
+**Don't worry** - starting fresh won't affect my ability to help you with vulnerability analysis, package queries, or SBOM scanning! 
+
+Thanks for understanding! 🚀`,
+        isContextLimitError: true,
+        conversationId: conversationId,
+        message: message,
+        sessionId: sessionId,
+        messageIndex: messageIndex
+      });
+    }
+    
     res.status(500).json({ 
       error: 'Failed to process chat message',
       details: error instanceof Error ? error.message : 'Unknown error'
