@@ -486,7 +486,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Create the message for AI analysis
     const sbomAnalysisMessage: ChatMessage = {
       role: 'user',
-      content: `I've uploaded ${existingThreadId ? 'an additional' : 'an'} SBOM file "${fileName}" with ${packages.length} packages${existingThreadId ? ' for comparison with the previous SBOM(s)' : ''}. Here's the comprehensive analysis data:
+      content: `I've uploaded ${existingThreadId ? 'an additional' : 'an'} SBOM file "${fileName}" with ${packages.length} packages${existingThreadId ? ' for comparison with the previous SBOM(s)' : ''}. Here's the comprehensive analysis data about the said file, answer all the question about the file with the data below:
 
 **Quick Scan Summary:**
 - Total packages scanned: ${packagesToScan.length}
