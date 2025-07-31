@@ -3,7 +3,7 @@
 > **Internal Technical Documentation**  
 > A hybrid-architecture full-stack security analysis platform that combines intelligent templated responses with advanced AI consultation for comprehensive SBOM vulnerability assessment.
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/kakderishikesh/BomBot-Chat)
+> Note that this branch uses the OpenAI's model in the backend.
 
 ## 🏗️ System Architecture
 
