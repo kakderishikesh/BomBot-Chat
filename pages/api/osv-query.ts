@@ -83,8 +83,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           }
           
           if (response.status === 404) {
-            return res.status(404).json({ 
-              error: `CVE ${cve} not found in OSV database` 
+            return res.status(200).json({ 
+              success: false,
+              error: `CVE ${cve} not found in OSV database`,
+              query: { cve }
             });
           }
           
