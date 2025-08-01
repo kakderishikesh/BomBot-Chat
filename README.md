@@ -1,7 +1,7 @@
 # 🤖 BomBot - Self-Hosted AI SBOM Security Analysis Platform
 
 > **Next-Generation Security Analysis**  
-> A hybrid-architecture full-stack security platform with **self-hosted Llama 3.2 AI** that provides instant vulnerability analysis, intelligent function calling, and comprehensive SBOM security assessment with complete data privacy.
+> A hybrid-architecture full-stack security platform with **self-hosted Llama 3.2 1B AI** that provides instant vulnerability analysis, intelligent function calling, and comprehensive SBOM security assessment with complete data privacy.
 
 
 ## 🏗️ System Architecture
