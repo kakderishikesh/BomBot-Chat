@@ -4,9 +4,50 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Package, FileText, Download, Trash2, Clock } from 'lucide-react';
+import { useState, useEffect } from 'react';
 
 const ChatSidebar = () => {
-  const { messages, uploadedFiles, clearChat } = useChat();
+  const { messages, uploadedFiles, clearChat, sessionId } = useChat();
+  const [modelStatus, setModelStatus] = useState<'checking' | 'ready' | 'unavailable'>('checking');
+
+  // Check model availability
+  const checkModelStatus = async () => {
+    try {
+      setModelStatus('checking');
+      
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          message: 'Hi',
+          conversationHistory: [],
+          sessionId: sessionId,
+          messageIndex: 0,
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.response) {
+          setModelStatus('ready');
+        } else {
+          setModelStatus('unavailable');
+        }
+      } else {
+        setModelStatus('unavailable');
+      }
+    } catch (error) {
+      console.error('Model status check failed:', error);
+      setModelStatus('unavailable');
+    }
+  };
+
+  // Check model status on component mount
+  useEffect(() => {
+    checkModelStatus();
+  }, [sessionId]);
 
   const handleExportChat = () => {
     const chatContent = messages.map(msg => 
@@ -42,7 +83,15 @@ const ChatSidebar = () => {
           </div>
           <div className="flex justify-between">
             <span className="text-gray-600">Status:</span>
-            <span className="font-medium text-green-600">Ready</span>
+            <span className={`font-medium ${
+              modelStatus === 'checking' ? 'text-yellow-600' :
+              modelStatus === 'ready' ? 'text-green-600' :
+              'text-red-600'
+            }`}>
+              {modelStatus === 'checking' ? 'Checking' :
+               modelStatus === 'ready' ? 'Ready' :
+               'Model Unavailable'}
+            </span>
           </div>
           
           <Separator className="my-3" />
