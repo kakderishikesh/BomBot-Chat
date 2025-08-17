@@ -15,6 +15,10 @@ const ChatSidebar = () => {
     try {
       setModelStatus('checking');
       
+      // Create abort controller for 10-second timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
+      
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: {
@@ -26,7 +30,11 @@ const ChatSidebar = () => {
           sessionId: sessionId,
           messageIndex: 0,
         }),
+        signal: controller.signal,
       });
+      
+      // Clear timeout if request completes
+      clearTimeout(timeoutId);
 
       if (response.ok) {
         const data = await response.json();
@@ -40,6 +48,9 @@ const ChatSidebar = () => {
       }
     } catch (error) {
       console.error('Model status check failed:', error);
+      if (error instanceof Error && error.name === 'AbortError') {
+        console.log('Model status check timed out after 10 seconds');
+      }
       setModelStatus('unavailable');
     }
   };
