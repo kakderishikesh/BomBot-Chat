@@ -3,7 +3,7 @@ import { useChat } from '@/contexts/ChatContext';
 import ChatMessage from '@/components/ChatMessage';
 import FileUploadOverlay from '@/components/FileUploadOverlay';
 import StatusIndicator from '@/components/StatusIndicator';
-import EmailCollectionDialog from '@/components/EmailCollectionDialog';
+import ProlificIDCollectionDialog from '@/components/ProlificIDCollectionDialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Shield, Send, Paperclip, Plus, MessageSquare } from 'lucide-react';
@@ -15,13 +15,13 @@ const ChatInterface = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Check if email dialog should be shown
-  const shouldShowEmailDialog = !userEmail;
+  // Check if Prolific ID dialog should be shown
+  const shouldShowProlificIDDialog = !userEmail;
 
-  // Handle email submission
-  const handleEmailSubmit = (email: string) => {
-    setUserEmail(email);
-    console.log('User email collected for survey:', email);
+  // Handle Prolific ID submission
+  const handleProlificIDSubmit = (prolificId: string) => {
+    setUserEmail(prolificId); // Note: keeping userEmail variable name for backend compatibility
+    console.log('User Prolific ID collected for survey:', prolificId);
   };
 
   // Auto-scroll to bottom on new messages
@@ -553,10 +553,10 @@ const ChatInterface = () => {
       {/* File Upload Overlay */}
       {isDragOver && <FileUploadOverlay />}
       
-      {/* Email Collection Dialog */}
-      <EmailCollectionDialog 
-        isOpen={shouldShowEmailDialog}
-        onEmailSubmit={handleEmailSubmit}
+      {/* Prolific ID Collection Dialog */}
+      <ProlificIDCollectionDialog 
+        isOpen={shouldShowProlificIDDialog}
+        onProlificIDSubmit={handleProlificIDSubmit}
       />
       
       {/* Hidden file input */}

@@ -4,42 +4,43 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { AlertCircle, Mail, CheckCircle } from 'lucide-react';
+import { AlertCircle, User, CheckCircle } from 'lucide-react';
 
-interface EmailCollectionDialogProps {
+interface ProlificIDCollectionDialogProps {
   isOpen: boolean;
-  onEmailSubmit: (email: string) => void;
+  onProlificIDSubmit: (prolificId: string) => void;
 }
 
-const EmailCollectionDialog: React.FC<EmailCollectionDialogProps> = ({
+const ProlificIDCollectionDialog: React.FC<ProlificIDCollectionDialogProps> = ({
   isOpen,
-  onEmailSubmit,
+  onProlificIDSubmit,
 }) => {
-  const [email, setEmail] = useState('');
-  const [confirmEmail, setConfirmEmail] = useState('');
+  const [prolificId, setProlificId] = useState('');
+  const [confirmProlificId, setConfirmProlificId] = useState('');
   const [isVerified, setIsVerified] = useState(false);
   const [errors, setErrors] = useState({
-    email: '',
-    confirmEmail: '',
+    prolificId: '',
+    confirmProlificId: '',
     verification: ''
   });
 
-  const validateEmail = (email: string): boolean => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
+  const validateProlificId = (prolificId: string): boolean => {
+    // Prolific ID validation: alphanumeric only, 1-30 characters, no special characters
+    const prolificIdRegex = /^[a-zA-Z0-9]{1,30}$/;
+    return prolificIdRegex.test(prolificId);
   };
 
-  const handleEmailChange = (value: string) => {
-    setEmail(value);
-    if (errors.email) {
-      setErrors(prev => ({ ...prev, email: '' }));
+  const handleProlificIdChange = (value: string) => {
+    setProlificId(value);
+    if (errors.prolificId) {
+      setErrors(prev => ({ ...prev, prolificId: '' }));
     }
   };
 
-  const handleConfirmEmailChange = (value: string) => {
-    setConfirmEmail(value);
-    if (errors.confirmEmail) {
-      setErrors(prev => ({ ...prev, confirmEmail: '' }));
+  const handleConfirmProlificIdChange = (value: string) => {
+    setConfirmProlificId(value);
+    if (errors.confirmProlificId) {
+      setErrors(prev => ({ ...prev, confirmProlificId: '' }));
     }
   };
 
@@ -52,23 +53,23 @@ const EmailCollectionDialog: React.FC<EmailCollectionDialogProps> = ({
 
   const validateForm = (): boolean => {
     const newErrors = {
-      email: '',
-      confirmEmail: '',
+      prolificId: '',
+      confirmProlificId: '',
       verification: ''
     };
 
-    // Validate email format
-    if (!email) {
-      newErrors.email = 'Email address is required';
-    } else if (!validateEmail(email)) {
-      newErrors.email = 'Please enter a valid email address';
+    // Validate Prolific ID format
+    if (!prolificId) {
+      newErrors.prolificId = 'Prolific ID is required';
+    } else if (!validateProlificId(prolificId)) {
+      newErrors.prolificId = 'Prolific ID should contain only letters and numbers (no special characters)';
     }
 
-    // Validate confirm email
-    if (!confirmEmail) {
-      newErrors.confirmEmail = 'Please confirm your email address';
-    } else if (email !== confirmEmail) {
-      newErrors.confirmEmail = 'Email addresses do not match';
+    // Validate confirm Prolific ID
+    if (!confirmProlificId) {
+      newErrors.confirmProlificId = 'Please confirm your Prolific ID';
+    } else if (prolificId !== confirmProlificId) {
+      newErrors.confirmProlificId = 'Prolific IDs do not match';
     }
 
     // Validate verification checkbox
@@ -77,25 +78,25 @@ const EmailCollectionDialog: React.FC<EmailCollectionDialogProps> = ({
     }
 
     setErrors(newErrors);
-    return !newErrors.email && !newErrors.confirmEmail && !newErrors.verification;
+    return !newErrors.prolificId && !newErrors.confirmProlificId && !newErrors.verification;
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
     if (validateForm()) {
-      onEmailSubmit(email);
+      onProlificIDSubmit(prolificId);
     }
   };
 
-  const isFormValid = email && confirmEmail && email === confirmEmail && isVerified && validateEmail(email);
+  const isFormValid = prolificId && confirmProlificId && prolificId === confirmProlificId && isVerified && validateProlificId(prolificId);
 
   return (
     <Dialog open={isOpen} modal>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <div className="flex items-center space-x-2">
-            <Mail className="h-6 w-6 text-blue-600" />
+            <User className="h-6 w-6 text-blue-600" />
             <DialogTitle>Survey Access Required</DialogTitle>
           </div>
         </DialogHeader>
@@ -103,54 +104,54 @@ const EmailCollectionDialog: React.FC<EmailCollectionDialogProps> = ({
         <div className="space-y-6">
           <div className="text-sm text-gray-600">
             <p className="mb-2">
-              Welcome to the BomBot! To use the service, please provide your email address as specified in the survey.
+              Welcome to the BomBot! To use the service, please provide your Prolific ID as specified in the survey.
             </p>
             <p className="text-xs text-gray-500">
-              Please verify your email before accessing BomBot.
+              Please verify your Prolific ID before accessing BomBot.
             </p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Email Input */}
+            {/* Prolific ID Input */}
             <div className="space-y-2">
-              <Label htmlFor="email">Email Address *</Label>
+              <Label htmlFor="prolificId">Prolific ID *</Label>
               <Input
-                id="email"
-                type="email"
-                placeholder="Enter your email address"
-                value={email}
-                onChange={(e) => handleEmailChange(e.target.value)}
-                className={errors.email ? 'border-red-500' : ''}
+                id="prolificId"
+                type="text"
+                placeholder="Enter your Prolific ID"
+                value={prolificId}
+                onChange={(e) => handleProlificIdChange(e.target.value)}
+                className={errors.prolificId ? 'border-red-500' : ''}
               />
-              {errors.email && (
+              {errors.prolificId && (
                 <div className="flex items-center space-x-1 text-sm text-red-600">
                   <AlertCircle className="h-4 w-4" />
-                  <span>{errors.email}</span>
+                  <span>{errors.prolificId}</span>
                 </div>
               )}
             </div>
 
-            {/* Confirm Email Input */}
+            {/* Confirm Prolific ID Input */}
             <div className="space-y-2">
-              <Label htmlFor="confirmEmail">Confirm Email Address *</Label>
+              <Label htmlFor="confirmProlificId">Confirm Prolific ID *</Label>
               <Input
-                id="confirmEmail"
-                type="email"
-                placeholder="Re-enter your email address"
-                value={confirmEmail}
-                onChange={(e) => handleConfirmEmailChange(e.target.value)}
-                className={errors.confirmEmail ? 'border-red-500' : ''}
+                id="confirmProlificId"
+                type="text"
+                placeholder="Re-enter your Prolific ID"
+                value={confirmProlificId}
+                onChange={(e) => handleConfirmProlificIdChange(e.target.value)}
+                className={errors.confirmProlificId ? 'border-red-500' : ''}
               />
-              {errors.confirmEmail && (
+              {errors.confirmProlificId && (
                 <div className="flex items-center space-x-1 text-sm text-red-600">
                   <AlertCircle className="h-4 w-4" />
-                  <span>{errors.confirmEmail}</span>
+                  <span>{errors.confirmProlificId}</span>
                 </div>
               )}
-              {!errors.confirmEmail && email && confirmEmail && email === confirmEmail && (
+              {!errors.confirmProlificId && prolificId && confirmProlificId && prolificId === confirmProlificId && (
                 <div className="flex items-center space-x-1 text-sm text-green-600">
                   <CheckCircle className="h-4 w-4" />
-                  <span>Email addresses match</span>
+                  <span>Prolific IDs match</span>
                 </div>
               )}
             </div>
@@ -169,7 +170,7 @@ const EmailCollectionDialog: React.FC<EmailCollectionDialogProps> = ({
                     htmlFor="verification" 
                     className="text-sm font-normal cursor-pointer"
                   >
-                    I confirm that the email address entered above is correct and matches the email provided in the survey instructions.
+                    I confirm that the Prolific ID entered above is correct and matches the Prolific ID provided in the survey instructions.
                   </Label>
                   {errors.verification && (
                     <div className="flex items-center space-x-1 text-sm text-red-600">
@@ -204,4 +205,4 @@ const EmailCollectionDialog: React.FC<EmailCollectionDialogProps> = ({
   );
 };
 
-export default EmailCollectionDialog; 
+export default ProlificIDCollectionDialog; 
