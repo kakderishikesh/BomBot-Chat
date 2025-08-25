@@ -148,7 +148,7 @@ const ProlificIDCollectionDialog: React.FC<ProlificIDCollectionDialogProps> = ({
                   <span>{errors.confirmProlificId}</span>
                 </div>
               )}
-              {!errors.confirmProlificId && prolificId && confirmProlificId && prolificId === confirmProlificId && (
+              {!errors.confirmProlificId && prolificId && confirmProlificId && prolificId === confirmProlificId && validateProlificId(prolificId) && (
                 <div className="flex items-center space-x-1 text-sm text-green-600">
                   <CheckCircle className="h-4 w-4" />
                   <span>Prolific IDs match</span>
