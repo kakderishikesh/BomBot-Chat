@@ -32,16 +32,40 @@ const ProlificIDCollectionDialog: React.FC<ProlificIDCollectionDialogProps> = ({
 
   const handleProlificIdChange = (value: string) => {
     setProlificId(value);
-    if (errors.prolificId) {
-      setErrors(prev => ({ ...prev, prolificId: '' }));
+    
+    // Real-time validation
+    let errorMessage = '';
+    if (value && !validateProlificId(value)) {
+      if (value.length > 30) {
+        errorMessage = 'Prolific ID cannot exceed 30 characters';
+      } else {
+        errorMessage = 'Prolific ID should contain only letters and numbers (no special characters)';
+      }
     }
+    
+    // Also check if confirm field needs to be re-validated
+    let confirmErrorMessage = '';
+    if (confirmProlificId && value && confirmProlificId !== value) {
+      confirmErrorMessage = 'Prolific IDs do not match';
+    }
+    
+    setErrors(prev => ({ 
+      ...prev, 
+      prolificId: errorMessage,
+      confirmProlificId: confirmErrorMessage
+    }));
   };
 
   const handleConfirmProlificIdChange = (value: string) => {
     setConfirmProlificId(value);
-    if (errors.confirmProlificId) {
-      setErrors(prev => ({ ...prev, confirmProlificId: '' }));
+    
+    // Real-time validation for confirm field
+    let errorMessage = '';
+    if (value && prolificId && value !== prolificId) {
+      errorMessage = 'Prolific IDs do not match';
     }
+    
+    setErrors(prev => ({ ...prev, confirmProlificId: errorMessage }));
   };
 
   const handleVerificationChange = (checked: boolean) => {
