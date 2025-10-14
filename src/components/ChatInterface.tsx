@@ -414,7 +414,7 @@ const ChatInterface = () => {
       setTimeout(() => {
         addMessage({
           type: 'assistant',
-          content: "Please wait for 3 seconds before sending your message. The SBOM information is being passed to the AI.",
+          content: "Please upload an SBOM to get started, or, if you've just uploaded one, wait 3 seconds while the data is being processed.",
         });
       }, 1000);
     }
