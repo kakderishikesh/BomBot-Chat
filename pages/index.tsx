@@ -46,7 +46,7 @@ export const getServerSideProps: GetServerSideProps = async ({ res }) => {
       <!DOCTYPE html>
       <html lang="en">
         <head>
-          <title>BomBot - Loading Error</title>
+          <title>BOMbot - Loading Error</title>
           <meta charset="utf-8">
           <meta name="viewport" content="width=device-width, initial-scale=1">
           <style>
@@ -70,7 +70,7 @@ export const getServerSideProps: GetServerSideProps = async ({ res }) => {
         </head>
         <body>
           <div class="container">
-            <h1 style="color: #1e40af;">🤖 BomBot</h1>
+            <h1 style="color: #1e40af;">🤖 BOMbot</h1>
             <p style="color: #6b7280;">Application loading error. Please refresh the page.</p>
             <button onclick="window.location.reload()" style="padding: 10px 20px; background: #3b82f6; color: white; border: none; border-radius: 6px; cursor: pointer;">
               Refresh

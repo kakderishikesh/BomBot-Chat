@@ -48,7 +48,7 @@ const Index = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center animate-fade-in">
             <h1 className="text-5xl md:text-6xl font-bold text-gray-900 mb-6 leading-tight">
-              BomBot
+              BOMbot
               <span className="block text-blue-600">AI-Powered SBOM Security Scanner</span>
             </h1>
             <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto leading-relaxed">
@@ -155,7 +155,7 @@ const Index = () => {
             <div className="text-center">
               <div className="flex items-center justify-center space-x-2 mb-4">
                 <Shield className="h-8 w-8 text-blue-400" />
-                <span className="text-xl font-bold text-white">BomBot</span>
+                <span className="text-xl font-bold text-white">BOMbot</span>
               </div>
               <p className="text-gray-400 leading-relaxed">
                 AI-powered SBOM vulnerability scanner for modern software security.
@@ -165,7 +165,7 @@ const Index = () => {
           
           <div className="border-t border-gray-800 mt-8 pt-8 text-center">
             <p className="text-gray-400">
-              © 2025 BomBot. Built with security in mind.
+              © 2025 BOMbot. Built with security in mind.
             </p>
           </div>
         </div>

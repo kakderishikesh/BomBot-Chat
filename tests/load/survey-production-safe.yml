@@ -14,7 +14,7 @@ config:
       name: "Survey completion"
   defaults:
     headers:
-      User-Agent: 'BomBot-Survey-Test/1.0'
+      User-Agent: 'BOMbot-Survey-Test/1.0'
       Content-Type: 'application/json'
     timeout: 45
   payload:

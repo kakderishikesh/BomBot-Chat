@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# BomBot Load Testing Script
+# BOMbot Load Testing Script
 # Usage: ./run-load-tests.sh [test-type] [target-url]
 # Example: ./run-load-tests.sh light https://bombot.vercel.app
 
@@ -22,7 +22,7 @@ TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
 # Create results directory
 mkdir -p "$RESULTS_DIR"
 
-echo -e "${BLUE}🚀 Starting BomBot Load Testing${NC}"
+echo -e "${BLUE}🚀 Starting BOMbot Load Testing${NC}"
 echo -e "${BLUE}Target URL: ${TARGET_URL}${NC}"
 echo -e "${BLUE}Test Type: ${TEST_TYPE}${NC}"
 echo -e "${BLUE}Timestamp: ${TIMESTAMP}${NC}"
@@ -141,7 +141,7 @@ generate_summary() {
     local summary_file="${RESULTS_DIR}/summary_${TIMESTAMP}.md"
     
     cat > "$summary_file" << EOF
-# BomBot Load Test Summary
+# BOMbot Load Test Summary
 
 **Test Date:** $(date)
 **Target URL:** ${TARGET_URL}

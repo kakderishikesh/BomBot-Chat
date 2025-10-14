@@ -74,7 +74,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         method: 'GET',
         headers: { 
           'Content-Type': 'application/json',
-          'User-Agent': 'BomBot-SBOM-Scanner/1.0'
+          'User-Agent': 'BOMbot-SBOM-Scanner/1.0'
         }
       });
       
@@ -102,7 +102,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
-          'User-Agent': 'BomBot-SBOM-Scanner/1.0'
+          'User-Agent': 'BOMbot-SBOM-Scanner/1.0'
         },
         body: JSON.stringify(queryBody)
       });

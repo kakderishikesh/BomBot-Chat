@@ -1,6 +1,6 @@
 # Production Load Testing Guide for 30-User Survey
 
-This guide provides step-by-step instructions for testing BomBot with 30 concurrent users for 7 minutes on your production environment.
+This guide provides step-by-step instructions for testing BOMbot with 30 concurrent users for 7 minutes on your production environment.
 
 ## 🎯 Survey Test Overview
 
@@ -98,7 +98,7 @@ cd /path/to/BomBot-Chat
 ### Step 2: Monitor Progress
 The script will show real-time progress:
 ```
-🚀 Starting BomBot Load Testing
+🚀 Starting BOMbot Load Testing
 Target URL: https://bombot.vercel.app
 Test Type: survey
 

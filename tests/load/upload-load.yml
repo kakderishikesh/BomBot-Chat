@@ -6,7 +6,7 @@ config:
       name: "SBOM Upload Load Test"
   defaults:
     headers:
-      User-Agent: 'BomBot-UploadTest/1.0'
+      User-Agent: 'BOMbot-UploadTest/1.0'
   payload:
     - path: "./test-data/sample-emails.csv"
       fields:

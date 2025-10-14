@@ -9,7 +9,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const projectRoot = join(__dirname, '..');
 
-console.log('🚀 Building full-stack BomBot application...');
+console.log('🚀 Building full-stack BOMbot application...');
 
 // Step 1: Build the UI with Vite
 console.log('📦 Building UI with Vite...');

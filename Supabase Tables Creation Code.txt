@@ -93,7 +93,7 @@ ORDER BY total_interactions DESC;
 
 
 -- Add helpful comments
-COMMENT ON TABLE chat_logs IS 'Stores all chat interactions, file uploads, and survey participant data for BomBot';
+COMMENT ON TABLE chat_logs IS 'Stores all chat interactions, file uploads, and survey participant data for BOMbot';
 COMMENT ON COLUMN chat_logs.user_email IS 'Email address collected from survey participants for tracking their usage';
 COMMENT ON COLUMN chat_logs.session_id IS 'Unique identifier for each user session';
 COMMENT ON COLUMN chat_logs.thread_id IS 'OpenAI thread ID for AI conversations';

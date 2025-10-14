@@ -1,4 +1,4 @@
--- BomBot Chat Logging Schema for Supabase (Single Table Design)
+-- BOMbot Chat Logging Schema for Supabase (Single Table Design)
 -- Run this SQL in your Supabase SQL Editor to create the required table
 
 -- Enable UUID extension
@@ -16,6 +16,7 @@ CREATE TABLE IF NOT EXISTS chat_logs (
     file_name VARCHAR(255),
     file_size BIGINT,
     vulnerability_count INTEGER,
+    user_email VARCHAR(255),
     session_started_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
     session_last_activity TIMESTAMPTZ DEFAULT NOW() NOT NULL,
     created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
@@ -25,6 +26,7 @@ CREATE TABLE IF NOT EXISTS chat_logs (
 -- Create indexes for better performance
 CREATE INDEX IF NOT EXISTS idx_chat_logs_session_id ON chat_logs(session_id);
 CREATE INDEX IF NOT EXISTS idx_chat_logs_thread_id ON chat_logs(thread_id);
+CREATE INDEX IF NOT EXISTS idx_chat_logs_user_email ON chat_logs(user_email);
 CREATE INDEX IF NOT EXISTS idx_chat_logs_message_index ON chat_logs(session_id, message_index);
 CREATE INDEX IF NOT EXISTS idx_chat_logs_message_type ON chat_logs(message_type);
 CREATE INDEX IF NOT EXISTS idx_chat_logs_created_at ON chat_logs(created_at DESC);

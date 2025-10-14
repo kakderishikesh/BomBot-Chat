@@ -24,28 +24,28 @@ const About = () => {
         <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-100 rounded-full mb-6">
           <Shield className="h-8 w-8 text-blue-600" />
         </div>
-        <h1 className="text-4xl font-bold text-gray-900 mb-4">About BomBot</h1>
+        <h1 className="text-4xl font-bold text-gray-900 mb-4">About BOMbot</h1>
         <p className="text-xl text-gray-600 max-w-2xl mx-auto">
           AI-powered SBOM vulnerability scanner built for modern software security
         </p>
       </div>
 
-      {/* What is BomBot */}
+      {/* What is BOMbot */}
       <Card>
         <CardContent className="p-8">
           <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center">
             <Brain className="h-6 w-6 text-blue-600 mr-2" />
-            What is BomBot?
+            What is BOMbot?
           </h2>
           <div className="prose prose-gray max-w-none">
             <p className="text-gray-600 leading-relaxed mb-4">
-              BomBot is an intelligent vulnerability scanner designed specifically for Software Bill of Materials (SBOM) files. 
+              BOMbot is an intelligent vulnerability scanner designed specifically for Software Bill of Materials (SBOM) files. 
               It combines the power of the OSV (Open Source Vulnerabilities) database with advanced AI analysis to provide 
               comprehensive security insights for your software supply chain.
             </p>
             <p className="text-gray-600 leading-relaxed mb-4">
               SBOM files contain detailed information about all the components, libraries, and dependencies in your software. 
-              By analyzing these files, BomBot can identify potential security vulnerabilities, assess their severity, 
+              By analyzing these files, BOMbot can identify potential security vulnerabilities, assess their severity, 
               and provide actionable recommendations for remediation.
             </p>
             <p className="text-gray-600 leading-relaxed">
@@ -91,7 +91,7 @@ const About = () => {
           </div>
           <div className="mt-6 p-4 bg-orange-50 border border-orange-200 rounded-lg">
             <p className="text-orange-800 text-sm">
-              <strong>Privacy Notice:</strong> BomBot processes your SBOM files to provide vulnerability analysis. 
+              <strong>Privacy Notice:</strong> BOMbot processes your SBOM files to provide vulnerability analysis. 
               Files are temporarily stored during analysis and automatically deleted. We do not retain your data 
               or share it with third parties.
             </p>
@@ -107,7 +107,7 @@ const About = () => {
             Contact & Support
           </h2>
           <p className="text-gray-600 leading-relaxed mb-6">
-            Need help with BomBot? Have questions about SBOM analysis or found a security issue? 
+            Need help with BOMbot? Have questions about SBOM analysis or found a security issue? 
             We're here to help.
           </p>
           <div className="flex items-center space-x-4">

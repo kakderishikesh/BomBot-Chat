@@ -14,7 +14,7 @@ config:
       name: "Ramp down"
   defaults:
     headers:
-      User-Agent: 'BomBot-LoadTest-Moderate/1.0'
+      User-Agent: 'BOMbot-LoadTest-Moderate/1.0'
       Content-Type: 'application/json'
   payload:
     - path: "./test-data/sample-emails.csv"

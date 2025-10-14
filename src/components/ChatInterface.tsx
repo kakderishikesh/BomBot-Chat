@@ -3,7 +3,7 @@ import { useChat } from '@/contexts/ChatContext';
 import ChatMessage from '@/components/ChatMessage';
 import FileUploadOverlay from '@/components/FileUploadOverlay';
 import StatusIndicator from '@/components/StatusIndicator';
-import ProlificIDCollectionDialog from '@/components/ProlificIDCollectionDialog';
+import EmailCollectionDialog from '@/components/EmailCollectionDialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Shield, Send, Paperclip, Plus, MessageSquare } from 'lucide-react';
@@ -15,13 +15,13 @@ const ChatInterface = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Check if Prolific ID dialog should be shown
-  const shouldShowProlificIDDialog = !userEmail;
+  // Check if Email dialog should be shown
+  const shouldShowEmailDialog = !userEmail;
 
-  // Handle Prolific ID submission
-  const handleProlificIDSubmit = (prolificId: string) => {
-    setUserEmail(prolificId); // Note: keeping userEmail variable name for backend compatibility
-    console.log('User Prolific ID collected for survey:', prolificId);
+  // Handle Email submission
+  const handleEmailSubmit = (email: string) => {
+    setUserEmail(email);
+    console.log('User Email collected for survey:', email);
   };
 
   // Auto-scroll to bottom on new messages
@@ -443,7 +443,7 @@ const ChatInterface = () => {
               <Shield className="h-6 w-6 text-white" />
             </div>
             <div>
-              <h1 className="text-xl font-semibold text-gray-900">BomBot</h1>
+              <h1 className="text-xl font-semibold text-gray-900">BOMbot</h1>
               <p className="text-sm text-gray-500">Your SBOM security expert</p>
             </div>
           </div>
@@ -471,7 +471,7 @@ const ChatInterface = () => {
               <Shield className="h-8 w-8 text-blue-600" />
             </div>
             <h3 className="text-xl font-semibold text-gray-900 mb-2">
-              Hi! I'm BomBot 👋
+              Hi! I'm BOMbot 👋
             </h3>
             <p className="text-gray-600 max-w-md mx-auto mb-6">
               Your SBOM security expert. Upload an SBOM file, ask about packages, or inquire about CVEs - I'm here to help!
@@ -553,10 +553,10 @@ const ChatInterface = () => {
       {/* File Upload Overlay */}
       {isDragOver && <FileUploadOverlay />}
       
-      {/* Prolific ID Collection Dialog */}
-      <ProlificIDCollectionDialog 
-        isOpen={shouldShowProlificIDDialog}
-        onProlificIDSubmit={handleProlificIDSubmit}
+      {/* Email Collection Dialog */}
+      <EmailCollectionDialog 
+        isOpen={shouldShowEmailDialog}
+        onEmailSubmit={handleEmailSubmit}
       />
       
       {/* Hidden file input */}

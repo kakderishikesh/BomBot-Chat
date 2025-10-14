@@ -1,10 +1,10 @@
-# 🚀 BomBot Full-Stack Deployment Guide
+# 🚀 BOMbot Full-Stack Deployment Guide
 
-This guide covers deploying the **complete BomBot application** (UI + API) as a unified full-stack application.
+This guide covers deploying the **complete BOMbot application** (UI + API) as a unified full-stack application.
 
 ## 📋 Overview
 
-BomBot is now configured as a **unified full-stack application** that includes:
+BOMbot is now configured as a **unified full-stack application** that includes:
 - **Frontend**: React UI built with Vite (TypeScript, TailwindCSS, Radix UI)
 - **Backend**: Next.js API with OpenAI integration and OSV vulnerability scanning
 - **Integration**: AI assistant with thread management and real-time polling
@@ -209,7 +209,7 @@ The deployment includes:
 
 ## 🎉 Success!
 
-Your BomBot application is now deployed as a **unified full-stack application** with:
+Your BOMbot application is now deployed as a **unified full-stack application** with:
 - ✅ React UI accessible at root URL
 - ✅ Next.js API endpoints at `/api/*`
 - ✅ AI assistant with thread management

@@ -1,8 +1,8 @@
-# 🚀 BomBot Load Testing Guide
+# 🚀 BOMbot Load Testing Guide
 
 ## 📋 Overview
 
-This guide covers comprehensive load testing for BomBot, a Next.js application deployed on Vercel with OpenAI integration, Supabase database, and OSV API dependencies.
+This guide covers comprehensive load testing for BOMbot, a Next.js application deployed on Vercel with OpenAI integration, Supabase database, and OSV API dependencies.
 
 ## 🛠️ Setup Instructions
 
@@ -125,7 +125,7 @@ npm run stress-test TARGET_URL
 - **Active Connections**: Concurrent connections sustained
 - **Peak Load**: Maximum load before degradation
 
-## 🔍 BomBot-Specific Bottlenecks to Watch
+## 🔍 BOMbot-Specific Bottlenecks to Watch
 
 ### 1. Vercel Serverless Functions
 **Symptoms:**

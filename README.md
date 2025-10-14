@@ -1,4 +1,4 @@
-# 🤖 BomBot - Advanced AI-Powered SBOM Security Analysis Platform
+# 🤖 BOMbot - Advanced AI-Powered SBOM Security Analysis Platform
 
 > **Internal Technical Documentation**  
 > A hybrid-architecture full-stack security analysis platform that combines intelligent templated responses with advanced AI consultation for comprehensive SBOM vulnerability assessment.
@@ -7,11 +7,11 @@
 
 ## 🏗️ System Architecture
 
-BomBot implements a sophisticated hybrid response system that provides both instant vulnerability analysis and deep AI-powered security consultation:
+BOMbot implements a sophisticated hybrid response system that provides both instant vulnerability analysis and deep AI-powered security consultation:
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                     BomBot Platform                         │
+│                     BOMbot Platform                         │
 ├─────────────────────────────────────────────────────────────┤
 │  🎨 React UI (Vite)              🔧 Next.js API Routes     │
 │  ├── ChatInterface.tsx           ├── /api/upload           │
@@ -265,13 +265,13 @@ NODE_ENV=production                     # Runtime environment
 ### OpenAI Assistant Configuration
 ```yaml
 Assistant Setup:
-  name: "BomBot Security Analyst"
+  name: "BOMbot Security Analyst"
   model: "gpt-4-turbo-preview"
   temperature: 0.1
   top_p: 0.2
   
 Instructions: |
-  You are BomBot, an expert cybersecurity analyst specializing in SBOM analysis and vulnerability assessment. 
+  You are BOMbot, an expert cybersecurity analyst specializing in SBOM analysis and vulnerability assessment. 
   
   Core Capabilities:
   1. Real-time vulnerability research using OSV.dev database

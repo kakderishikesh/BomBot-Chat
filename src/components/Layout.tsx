@@ -44,7 +44,7 @@ const Layout = ({ children }: LayoutProps) => {
             <Link to="/" className="flex items-center space-x-2 group">
               <Shield className="h-8 w-8 text-blue-600 group-hover:text-blue-700 transition-colors" />
               <span className="text-xl font-bold text-gray-900 group-hover:text-blue-700 transition-colors">
-                BomBot
+                BOMbot
               </span>
             </Link>
 
@@ -64,7 +64,7 @@ const Layout = ({ children }: LayoutProps) => {
                 <div className="flex flex-col space-y-4 mt-8">
                   <Link to="/" className="flex items-center space-x-2 mb-8">
                     <Shield className="h-6 w-6 text-blue-600" />
-                    <span className="text-lg font-bold text-gray-900">BomBot</span>
+                    <span className="text-lg font-bold text-gray-900">BOMbot</span>
                   </Link>
                   <NavItems mobile />
                 </div>

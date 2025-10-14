@@ -143,6 +143,7 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
         fileName,
         fileSize,
         vulnerabilityCount,
+        userEmail,
       });
     } catch (error) {
       console.error('Error logging chat message:', error);

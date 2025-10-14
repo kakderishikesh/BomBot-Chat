@@ -6,7 +6,7 @@ config:
       name: "Light load - Basic functionality"
   defaults:
     headers:
-      User-Agent: 'BomBot-LoadTest/1.0'
+      User-Agent: 'BOMbot-LoadTest/1.0'
   payload:
     - path: "./test-data/sample-emails.csv"
       fields:

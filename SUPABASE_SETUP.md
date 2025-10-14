@@ -1,6 +1,6 @@
 # 🗃️ Supabase Chat Logging Setup Guide
 
-This guide explains how to set up Supabase for chat logging in the BomBot application.
+This guide explains how to set up Supabase for chat logging in the BOMbot application.
 
 ## 📋 Overview
 
@@ -163,7 +163,7 @@ To monitor your chat logging:
 
 ## 🔄 Migration Notes
 
-If you're adding this to an existing BomBot installation:
+If you're adding this to an existing BOMbot installation:
 
 1. Your existing functionality will continue to work
 2. Chat logging will start immediately after setup

@@ -14,7 +14,7 @@ config:
       name: "Ramp down"
   defaults:
     headers:
-      User-Agent: 'BomBot-LoadTest-Heavy/1.0'
+      User-Agent: 'BOMbot-LoadTest-Heavy/1.0'
       Content-Type: 'application/json'
     timeout: 30 # 30 second timeout for requests
   payload:
