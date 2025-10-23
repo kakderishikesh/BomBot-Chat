@@ -1,8 +1,8 @@
-# 🗃️ Supabase Chat Logging Setup Guide
+# Supabase Chat Logging Setup Guide
 
 This guide explains how to set up Supabase for chat logging in the BomBot application.
 
-## 📋 Overview
+## Overview
 
 The chat logging feature tracks:
 - User questions to AI
@@ -13,7 +13,7 @@ The chat logging feature tracks:
 - Session management
 - Vulnerability counts from SBOM scans
 
-## 🚀 Setup Instructions
+## Setup Instructions
 
 ### 1. Create a Supabase Project
 
@@ -71,7 +71,7 @@ If you're deploying to Vercel or another platform, make sure to add these enviro
 2. Click **Settings** → **Environment Variables**
 3. Add each variable with its corresponding value
 
-## 🔧 Environment Variables Explained
+## Environment Variables Explained
 
 | Variable | Type | Description |
 |----------|------|-------------|
@@ -79,7 +79,7 @@ If you're deploying to Vercel or another platform, make sure to add these enviro
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Public | Anonymous access key. Safe to expose to client. |
 | `SUPABASE_SERVICE_ROLE_KEY` | **Secret** | Service role key with admin access. **Never expose to client!** |
 
-## 📊 Database Schema
+## Database Schema
 
 ### chat_logs (Single Table Design)
 Stores all chat information in one comprehensive table:
@@ -104,7 +104,7 @@ Stores all chat information in one comprehensive table:
 - `created_at`: When this record was created
 - `updated_at`: When this record was last modified
 
-## 🔍 Analytics and Monitoring
+## Analytics and Monitoring
 
 The setup includes a `session_analytics` view that provides:
 - Session duration
@@ -119,7 +119,7 @@ WHERE session_started_at >= NOW() - INTERVAL '7 days'
 ORDER BY session_last_activity DESC;
 ```
 
-## 🧹 Data Cleanup
+## Data Cleanup
 
 The schema includes a cleanup function that removes sessions older than 30 days:
 
@@ -129,14 +129,14 @@ SELECT cleanup_old_sessions();
 
 You can schedule this to run automatically using pg_cron (if available in your Supabase plan).
 
-## 🔒 Security Considerations
+## Security Considerations
 
 1. **RLS Policies**: The schema enables Row Level Security with permissive policies
 2. **Service Role Key**: Keep this secret and only use it in server-side code
 3. **Data Retention**: Consider implementing data retention policies per your requirements
 4. **GDPR Compliance**: Add user identification fields if needed for data deletion requests
 
-## 🐛 Troubleshooting
+## Troubleshooting
 
 ### Common Issues:
 
@@ -152,7 +152,7 @@ You can schedule this to run automatically using pg_cron (if available in your S
 3. Test database connection manually
 4. Check browser console for client-side errors
 
-## 📈 Monitoring Usage
+## Monitoring Usage
 
 To monitor your chat logging:
 
@@ -161,7 +161,7 @@ To monitor your chat logging:
 3. Monitor API usage in Supabase settings
 4. Set up alerts for error rates
 
-## 🔄 Migration Notes
+## Migration Notes
 
 If you're adding this to an existing BomBot installation:
 

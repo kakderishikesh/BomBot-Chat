@@ -1,15 +1,15 @@
-# 🚀 BomBot Full-Stack Deployment Guide
+# BomBot Full-Stack Deployment Guide
 
 This guide covers deploying the **complete BomBot application** (UI + API) as a unified full-stack application.
 
-## 📋 Overview
+## Overview
 
 BomBot is now configured as a **unified full-stack application** that includes:
 - **Frontend**: React UI built with Vite (TypeScript, TailwindCSS, Radix UI)
 - **Backend**: Next.js API with OpenAI integration and OSV vulnerability scanning
 - **Integration**: AI assistant with thread management and real-time polling
 
-## 🏗️ Build Process
+## Build Process
 
 The application uses an integrated build system that:
 1. **Builds UI** with Vite (`npm run build:ui`)
@@ -28,7 +28,7 @@ npm run build        # Unified build (UI + API)
 npm run start        # Production server
 ```
 
-## 🌐 Vercel Deployment (Recommended)
+## Vercel Deployment (Recommended)
 
 ### 1. Repository Setup
 ```bash
@@ -91,7 +91,7 @@ https://your-app.vercel.app/
 └── /assets/*            # Static UI assets
 ```
 
-## 🔧 Alternative Deployments
+## Alternative Deployments
 
 ### Netlify
 ```bash
@@ -131,7 +131,7 @@ pm2 save
 pm2 startup
 ```
 
-## 🏃‍♂️ Local Production Testing
+## Local Production Testing
 
 Test the production build locally:
 
@@ -145,7 +145,7 @@ npm start
 # Visit http://localhost:3000
 ```
 
-## 📊 Build Output Analysis
+## Build Output Analysis
 
 **UI Build (Vite):**
 - Main bundle: ~399kB JS (126kB gzipped)
@@ -157,7 +157,7 @@ npm start
 - Static optimization enabled
 - Production-ready routing
 
-## 🔍 Health Checks
+## Health Checks
 
 After deployment, verify these endpoints:
 
@@ -171,7 +171,7 @@ curl https://your-app.vercel.app/api/osv-query
 curl https://your-app.vercel.app/api/run-status
 ```
 
-## 🐛 Troubleshooting
+## Troubleshooting
 
 ### Build Issues
 ```bash
@@ -190,7 +190,7 @@ npm run build
 - Check that `public/dist/` contains UI files after build
 - Verify Next.js routing in `next.config.cjs`
 
-## 📈 Performance Optimizations
+## Performance Optimizations
 
 The deployment includes:
 - **Static caching** for UI assets (1 year cache)
@@ -198,7 +198,7 @@ The deployment includes:
 - **Vite optimizations** (tree shaking, minification)
 - **Proper routing** (SPA behavior for UI, API routing)
 
-## 🔐 Security Considerations
+## Security Considerations
 
 - Environment variables are secure in Vercel
 - No sensitive data in client bundle
@@ -207,22 +207,22 @@ The deployment includes:
 
 ---
 
-## 🎉 Success!
+## Success!
 
 Your BomBot application is now deployed as a **unified full-stack application** with:
-- ✅ React UI accessible at root URL
-- ✅ Next.js API endpoints at `/api/*`
-- ✅ AI assistant with thread management
-- ✅ File upload and SBOM scanning
-- ✅ Package vulnerability queries
-- ✅ Production-optimized builds
+- React UI accessible at root URL
+- Next.js API endpoints at `/api/*`
+- AI assistant with thread management
+- File upload and SBOM scanning
+- Package vulnerability queries
+- Production-optimized builds
 
 **Live Demo Structure:**
 ```
-🌐 https://your-bombot-app.vercel.app
-├── 🎨 Modern React UI (Vite-built)
-├── 🤖 AI Assistant Chat
-├── 📤 File Upload & SBOM Scanning  
-├── 🔍 Package Vulnerability Search
-└── 🛡️ Real-time Security Analysis
+https://your-bombot-app.vercel.app
+├── Modern React UI (Vite-built)
+├── AI Assistant Chat
+├── File Upload & SBOM Scanning  
+├── Package Vulnerability Search
+└── Real-time Security Analysis
 ``` 

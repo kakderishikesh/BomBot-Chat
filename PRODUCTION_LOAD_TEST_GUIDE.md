@@ -2,7 +2,7 @@
 
 This guide provides step-by-step instructions for testing BomBot with 30 concurrent users for 7 minutes on your production environment.
 
-## 🎯 Survey Test Overview
+## Survey Test Overview
 
 - **Duration**: 7 minutes total
 - **Users**: 30 concurrent participants  
@@ -10,7 +10,7 @@ This guide provides step-by-step instructions for testing BomBot with 30 concurr
 - **Peak Load**: 5 minutes at full capacity
 - **Ramp-down**: 1 minute (users completing tasks)
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Option 1: Direct Script Execution
 ```bash
@@ -28,7 +28,7 @@ export TARGET_URL="https://bombot.vercel.app"
 npm run load-test:survey
 ```
 
-## 📋 Pre-Test Checklist
+## Pre-Test Checklist
 
 1. **Verify Production State**
    ```bash
@@ -51,7 +51,7 @@ npm run load-test:survey
    - Have OpenAI usage dashboard ready
    - Monitor Supabase dashboard if using custom logging
 
-## 🎮 Test Scenarios
+## Test Scenarios
 
 The survey simulation includes three realistic user journeys:
 
@@ -70,7 +70,7 @@ The survey simulation includes three realistic user journeys:
 - Quick package checks
 - Simulates casual browsing
 
-## 📊 Expected Results
+## Expected Results
 
 ### Success Criteria
 - **Response Time**: <5 seconds (p95) for API calls
@@ -87,7 +87,7 @@ vus........................: 30 concurrent users
 vus_max....................: 30 peak users
 ```
 
-## ⚡ Running the Test
+## Running the Test
 
 ### Step 1: Execute Test
 ```bash
@@ -98,18 +98,18 @@ cd /path/to/BomBot-Chat
 ### Step 2: Monitor Progress
 The script will show real-time progress:
 ```
-🚀 Starting BomBot Load Testing
+Starting BomBot Load Testing
 Target URL: https://bombot.vercel.app
 Test Type: survey
 
-🔍 Checking prerequisites...
+Checking prerequisites...
 ✅ Artillery found
 ✅ Target URL is reachable
 
-🔥 Warming up server...
+Warming up server...
 ✅ Warmup complete
 
-🎯 Running Survey_Simulation test...
+Running Survey_Simulation test...
 ```
 
 ### Step 3: Review Results
@@ -121,7 +121,7 @@ tests/load/results/
 └── summary_20240115_143022.md
 ```
 
-## 🔍 Analyzing Results
+## Analyzing Results
 
 ### Open HTML Report
 ```bash
@@ -148,7 +148,7 @@ open tests/load/results/Survey_Simulation_*.html
    - OpenAI API response times
    - Database query performance
 
-## 🚨 Troubleshooting
+## Troubleshooting
 
 ### High Error Rates (>5%)
 ```bash
@@ -174,7 +174,7 @@ artillery --version
 node --version
 ```
 
-## 💡 Production Best Practices
+## Production Best Practices
 
 ### Before Testing
 1. **Notify stakeholders** about the load test
@@ -194,7 +194,7 @@ node --version
 3. **Document performance bottlenecks**
 4. **Plan optimization based on findings**
 
-## 📈 Scaling Recommendations
+## Scaling Recommendations
 
 Based on 30-user test results:
 
@@ -202,7 +202,7 @@ Based on 30-user test results:
 - **500 users**: Consider staged testing approach
 - **1000+ users**: Requires infrastructure assessment
 
-## 🔧 Customizing the Test
+## Customizing the Test
 
 ### Modify User Count
 Edit `tests/load/survey-simulation.yml`:
@@ -234,7 +234,7 @@ scenarios:
     weight: 10        # 10% exploration
 ```
 
-## 📞 Support
+## Support
 
 If you encounter issues:
 1. Check the troubleshooting section above

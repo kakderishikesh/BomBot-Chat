@@ -1,30 +1,30 @@
-# 🔗 GUAC Integration Guide for BomBot
+# GUAC Integration Guide for BomBot
 
 ## Overview
 
 This guide explains how to use the **Google GUAC (Graph for Understanding Artifact Composition)** integration in BomBot. GUAC transforms your supply chain security from a simple "scan and report" model into a **persistent knowledge graph** that enables advanced relationship analysis, policy compliance checks, and cross-artifact insights.
 
-## 🎯 What GUAC Adds to BomBot
+## What GUAC Adds to BomBot
 
 ### Before GUAC Integration
 - ✅ Upload SBOM → Get vulnerabilities
 - ✅ OSV.dev integration for CVE data
 - ✅ AI-powered security advice
-- ❌ **Stateless**: No memory between uploads
-- ❌ **Limited scope**: Single SBOM analysis only
-- ❌ **No relationships**: Can't see cross-project dependencies
+- **Stateless**: No memory between uploads
+- **Limited scope**: Single SBOM analysis only
+- **No relationships**: Can't see cross-project dependencies
 
 ### After GUAC Integration
-- ✅ **Persistent Knowledge Graph**: All SBOMs stored permanently
-- ✅ **Relationship Analysis**: "What depends on this vulnerable package?"
-- ✅ **Supply Chain Policies**: SLSA levels, signatures, attestations
-- ✅ **Cross-Project Insights**: Dependencies across your entire organization
-- ✅ **Blast Radius Analysis**: Impact assessment for vulnerabilities
-- ✅ **Compliance Tracking**: Track security posture over time
+- **Persistent Knowledge Graph**: All SBOMs stored permanently
+- **Relationship Analysis**: "What depends on this vulnerable package?"
+- **Supply Chain Policies**: SLSA levels, signatures, attestations
+- **Cross-Project Insights**: Dependencies across your entire organization
+- **Blast Radius Analysis**: Impact assessment for vulnerabilities
+- **Compliance Tracking**: Track security posture over time
 
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
 ### 1. Start GUAC Infrastructure
 
@@ -64,7 +64,7 @@ NATS_URL=http://localhost:4222
 
 ---
 
-## 🧩 Features & Capabilities
+## Features & Capabilities
 
 ### 1. Automatic SBOM Ingestion
 
@@ -138,7 +138,7 @@ Ask: "Show me version drift across projects"
 
 ---
 
-## 💬 Using GUAC with the AI Assistant
+## Using GUAC with the AI Assistant
 
 ### Supply Chain Analysis Queries
 
@@ -182,7 +182,7 @@ Ask: "Show me version drift across projects"
 
 ---
 
-## 🔧 API Reference
+## API Reference
 
 ### GUAC Query API (`/api/guac-query`)
 
@@ -235,7 +235,7 @@ POST /api/guac-ingest
 
 ---
 
-## 🎨 UI Components Guide
+## UI Components Guide
 
 ### GuacInsightsTab
 
@@ -290,7 +290,7 @@ POST /api/guac-ingest
 
 ---
 
-## 🔍 Advanced Use Cases
+## Advanced Use Cases
 
 ### 1. Vulnerability Impact Analysis
 
@@ -345,7 +345,7 @@ POST /api/guac-ingest
 
 ---
 
-## 🛠️ Troubleshooting
+## Troubleshooting
 
 ### GUAC Services Not Starting
 
@@ -452,7 +452,7 @@ lsof -i :8080 -i :8081 -i :5432 -i :4222
 
 ---
 
-## 📊 Monitoring & Maintenance
+## Monitoring & Maintenance
 
 ### Health Checks
 
@@ -506,7 +506,7 @@ cp docker/guac.env docker/guac.env.backup
 
 ---
 
-## 🤝 Getting Help
+## Getting Help
 
 ### Community Resources
 
@@ -536,7 +536,7 @@ cp docker/guac.env docker/guac.env.backup
 
 ---
 
-## 🔮 Future Roadmap
+## Future Roadmap
 
 ### Planned Enhancements
 
@@ -569,6 +569,6 @@ cp docker/guac.env docker/guac.env.backup
 
 ---
 
-**Happy Supply Chain Securing! 🔒**
+**Happy Supply Chain Securing!**
 
 *For questions or support, refer to the troubleshooting section or check the community resources above.* 
