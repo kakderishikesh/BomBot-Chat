@@ -1,11 +1,11 @@
-# 🤖 BOMbot - Advanced AI-Powered SBOM Security Analysis Platform
+# BOMbot - Advanced AI-Powered SBOM Security Analysis Platform
 
 > **Internal Technical Documentation**  
 > A hybrid-architecture full-stack security analysis platform that combines intelligent templated responses with advanced AI consultation for comprehensive SBOM vulnerability assessment.
 
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/kakderishikesh/BomBot-Chat)
 
-## 🏗️ System Architecture
+## System Architecture
 
 BOMbot implements a sophisticated hybrid response system that provides both instant vulnerability analysis and deep AI-powered security consultation:
 
@@ -13,14 +13,14 @@ BOMbot implements a sophisticated hybrid response system that provides both inst
 ┌─────────────────────────────────────────────────────────────┐
 │                     BOMbot Platform                         │
 ├─────────────────────────────────────────────────────────────┤
-│  🎨 React UI (Vite)              🔧 Next.js API Routes     │
+│  React UI (Vite)              Next.js API Routes     │
 │  ├── ChatInterface.tsx           ├── /api/upload           │
 │  ├── PackageQueryForm.tsx        ├── /api/osv-query        │
 │  ├── ChatMessage.tsx             ├── /api/chat             │
 │  ├── VulnerabilityCards          └── /api/run-status       │
 │  └── Real-time Polling                                     │
 ├─────────────────────────────────────────────────────────────┤
-│  📊 Hybrid Response Engine                                 │
+│  Hybrid Response Engine                                 │
 │  ├── Quick Templated Responses   ├── AI Thread Management │
 │  ├── OSV Data Transformation     ├── Polling Architecture │
 │  └── Vulnerability Card Gen.     └── Context Preservation │
@@ -29,46 +29,46 @@ BOMbot implements a sophisticated hybrid response system that provides both inst
     ┌─────────────▼─────────────────────────────────────┐
     │              External Integrations                │
     ├───────────────────────────────────────────────────┤
-    │  🤖 OpenAI GPT-4 Assistant    📊 OSV.dev API      │
+    │  OpenAI GPT-4 Assistant    OSV.dev API      │
     │  ├── Function Calling         ├── Package Queries │
     │  ├── Thread Conversations     ├── CVE Lookups     │
     │  └── Markdown Responses       └── Real-time Data  │
     └───────────────────────────────────────────────────┘
 ```
 
-## ✨ Advanced Features
+## Advanced Features
 
-### 🚀 **Hybrid Response System**
+### **Hybrid Response System**
 - **Instant Templated Responses**: Sub-second vulnerability summaries with interactive cards
 - **AI Deep Analysis**: Comprehensive security assessment with remediation guidance
 - **Seamless Transition**: Users get immediate feedback, then enhanced AI insights
 - **Context Preservation**: Maintains conversation flow across response types
 
-### 🎯 **Intelligent Package Analysis**
+### **Intelligent Package Analysis**
 - **Multi-Ecosystem Support**: npm, PyPI, Maven, Go, NuGet, RubyGems, Cargo, Composer, Hex, SwiftPM
 - **Version-Specific Queries**: Precise vulnerability matching for specific package versions
 - **Severity Intelligence**: CVSS score parsing to clean severity levels (CRITICAL/HIGH/MEDIUM/LOW)
 - **CVE Cross-Reference**: Direct OSV.dev integration for authoritative vulnerability data
 
-### 🛡️ **SBOM Processing Engine**
+### **SBOM Processing Engine**
 - **Multi-Format Support**: SPDX, CycloneDX, Generic JSON schemas
 - **Batch Processing**: Concurrent vulnerability scanning with rate limiting
 - **Dependency Mapping**: Package ecosystem detection from PURL and metadata
 - **Scalable Architecture**: Handles up to 50 packages per SBOM (serverless optimization)
 
-### 💬 **Advanced Chat System**
+### **Advanced Chat System**
 - **Persistent Threads**: OpenAI Assistant conversation continuity
 - **Real-time Polling**: Non-blocking response delivery with status tracking
 - **Markdown Rendering**: Rich formatted responses with proper spacing
 - **File Upload Integration**: Drag-and-drop SBOM processing with progress tracking
 
-### 🔍 **Smart Vulnerability Cards**
+### **Smart Vulnerability Cards**
 - **Interactive UI**: Clickable cards with direct OSV.dev links
 - **Severity Visualization**: Color-coded badges with appropriate icons
 - **Package Context**: Version-aware vulnerability attribution
 - **Export Ready**: Structured data for reporting and integration
 
-## 🛠️ Technical Implementation
+## Technical Implementation
 
 ### Frontend Architecture (React + TypeScript)
 
@@ -249,7 +249,7 @@ interface AssistantConfig {
 }
 ```
 
-## 🔧 Configuration & Deployment
+## Configuration & Deployment
 
 ### Environment Variables
 ```bash
@@ -302,7 +302,7 @@ Functions:
   - analyze_sbom_package(package_name, include_dependencies?)
 ```
 
-## 📊 Performance Metrics
+## Performance Metrics
 
 ### Bundle Analysis
 ```
@@ -340,7 +340,7 @@ Scalability Limits:
 └── API Rate Limits: OpenAI tier dependent
 ```
 
-## 🚀 Usage Patterns
+## Usage Patterns
 
 ### Enterprise SBOM Analysis
 ```typescript
@@ -364,7 +364,7 @@ Scalability Limits:
 6. Get technical implementation guidance
 ```
 
-## 🔄 Development Workflow
+## Development Workflow
 
 ### Local Development Setup
 ```bash
@@ -402,7 +402,7 @@ npm run type-check   # TypeScript validation
 npm run lint         # Code quality checks
 ```
 
-## 🔐 Security Features
+## Security Features
 
 ### Data Handling
 ```typescript
@@ -430,9 +430,9 @@ Security Measures:
     └── XSS protection via React's built-in escaping
 ```
 
-## 📈 Key Features Summary
+## Key Features Summary
 
-### ✅ **Current Capabilities**
+### **Current Capabilities**
 - **Hybrid Response System**: Instant templated responses + AI deep analysis
 - **Multi-Format SBOM Support**: SPDX, CycloneDX, Generic JSON
 - **11 Package Ecosystems**: npm, PyPI, Maven, Go, NuGet, RubyGems, etc.
@@ -444,7 +444,7 @@ Security Measures:
 - **Drag-and-Drop File Upload**: 10MB limit with progress tracking
 - **Silent Polling**: No timeout interruptions for better UX
 
-### 🔧 **Technical Stack**
+### **Technical Stack**
 - **Frontend**: React 18 + TypeScript + Vite + TailwindCSS + Radix UI
 - **Backend**: Next.js 14 + TypeScript + OpenAI API + OSV.dev API
 - **Deployment**: Vercel Serverless with optimized build pipeline
@@ -454,7 +454,7 @@ Security Measures:
 
 ---
 
-## 🏁 Quick Start
+## Quick Start
 
 1. **Deploy**: [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/kakderishikesh/BomBot-Chat)
 2. **Configure**: Add `OPENAI_API_KEY` and `ASSISTANT_ID` to Vercel environment
@@ -462,7 +462,7 @@ Security Measures:
 
 ---
 
-## 📄 License
+## License
 
 This project is licensed under the **Mozilla Public License 2.0** - see the [LICENSE](LICENSE) file for details.
 

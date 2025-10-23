@@ -1,10 +1,10 @@
-# 🚀 BOMbot Load Testing Guide
+# BOMbot Load Testing Guide
 
-## 📋 Overview
+## Overview
 
 This guide covers comprehensive load testing for BOMbot, a Next.js application deployed on Vercel with OpenAI integration, Supabase database, and OSV API dependencies.
 
-## 🛠️ Setup Instructions
+## Setup Instructions
 
 ### Step 1: Install Dependencies
 
@@ -33,7 +33,7 @@ export TARGET_URL="http://localhost:3000"
 export TARGET_URL="https://your-bombot-app.vercel.app"
 ```
 
-## 🎯 Test Types Available
+## Test Types Available
 
 ### 1. Light Load Test
 **Purpose**: Basic functionality testing with minimal load
@@ -98,7 +98,7 @@ npm run stress-test TARGET_URL
 ./tests/load/run-load-tests.sh all https://your-app.vercel.app
 ```
 
-## 📊 Key Metrics to Monitor
+## Key Metrics to Monitor
 
 ### 1. Response Time Metrics
 - **Mean Response Time**: Average request duration
@@ -106,7 +106,7 @@ npm run stress-test TARGET_URL
 - **p99 Response Time**: 99th percentile (worst case scenario)
 - **Max Response Time**: Slowest request
 
-**✅ Good Targets:**
+**Good Targets:**
 - Frontend pages: < 2 seconds (p95)
 - API endpoints: < 5 seconds (p95)
 - File uploads: < 30 seconds (p95)
@@ -116,7 +116,7 @@ npm run stress-test TARGET_URL
 - **Successful Requests**: Non-error responses
 - **Failed Requests**: Error responses (4xx, 5xx)
 
-**✅ Good Targets:**
+**Good Targets:**
 - Error Rate: < 1%
 - Success Rate: > 99%
 
@@ -125,7 +125,7 @@ npm run stress-test TARGET_URL
 - **Active Connections**: Concurrent connections sustained
 - **Peak Load**: Maximum load before degradation
 
-## 🔍 BOMbot-Specific Bottlenecks to Watch
+## BOMbot-Specific Bottlenecks to Watch
 
 ### 1. Vercel Serverless Functions
 **Symptoms:**
@@ -175,7 +175,7 @@ grep "Memory Used:" vercel-logs.txt
 - Monitor query execution times
 - Track database error rates
 
-## 🎮 Running Your First Load Test
+## Running Your First Load Test
 
 ### Step 1: Local Testing (Recommended First)
 ```bash
@@ -201,7 +201,7 @@ npm run deploy
 3. Check for error patterns in logs
 4. Compare metrics against targets
 
-## 📈 Interpreting Results
+## Interpreting Results
 
 ### Sample Artillery Report Analysis
 
@@ -228,9 +228,9 @@ npm run deploy
 ```
 
 **Analysis:**
-- ✅ **Good**: High success rate (98.3%)
-- ⚠️ **Concerning**: High p95/p99 response times
-- ❌ **Issues**: Server errors and timeouts need investigation
+- **Good**: High success rate (98.3%)
+- **Concerning**: High p95/p99 response times
+- **Issues**: Server errors and timeouts need investigation
 
 ### Optimization Recommendations
 
@@ -241,7 +241,7 @@ Based on the above analysis:
 3. **Add caching**: Implement response caching for static data
 4. **Scale resources**: Consider Vercel Pro for better performance
 
-## 🔧 Troubleshooting Common Issues
+## Troubleshooting Common Issues
 
 ### Issue 1: Tests Failing to Connect
 ```bash
@@ -277,7 +277,7 @@ top -p $(pgrep node)
 grep "Memory Used" vercel-logs.txt
 ```
 
-## 📋 Pre-Production Checklist
+## Pre-Production Checklist
 
 Before deploying to production:
 
@@ -291,7 +291,7 @@ Before deploying to production:
 - [ ] **Backup strategy verified** for database
 - [ ] **Security testing completed** (if applicable)
 
-## 🚨 Alert Thresholds for Production
+## Alert Thresholds for Production
 
 Set up monitoring alerts for:
 
@@ -302,7 +302,7 @@ Set up monitoring alerts for:
 - **Memory Usage**: > 80% of function limit
 - **Disk Usage**: > 90% (if applicable)
 
-## 🔗 Additional Resources
+## Additional Resources
 
 - [Artillery.io Documentation](https://artillery.io/docs/)
 - [Vercel Performance Monitoring](https://vercel.com/docs/concepts/analytics)
@@ -310,7 +310,7 @@ Set up monitoring alerts for:
 - [OpenAI Rate Limits](https://platform.openai.com/docs/guides/rate-limits)
 - [OSV.dev API Documentation](https://osv.dev/docs/)
 
-## 🎯 Next Steps
+## Next Steps
 
 1. **Run your first light load test** to establish baseline
 2. **Gradually increase load** to find capacity limits
@@ -320,6 +320,6 @@ Set up monitoring alerts for:
 
 ---
 
-**Happy Load Testing! 🚀**
+**Happy Load Testing!**
 
 For questions or issues, check the generated summary reports or review Vercel/OpenAI dashboard during tests. 
