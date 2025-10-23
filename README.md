@@ -82,9 +82,9 @@ BOMbot implements a sophisticated hybrid response system that provides both inst
 
 // PackageQueryForm.tsx - Package analysis interface  
 - Ecosystem selection with validation
-- Real-time OSV API integration
+- Real-time Google Open Source Vulnerability Database (OSV DB) integration
 - Severity extraction and normalization
-- Thread setup for follow-up questions
+- Thread setup for AI Deep Dive
 
 // ChatMessage.tsx - Dynamic message rendering
 - Markdown vs HTML conditional rendering
@@ -477,4 +477,4 @@ For more information about MPL-2.0, visit: https://mozilla.org/MPL/2.0/
 
 ---
 
-*Last Updated: July 2025 | Version: 2.0.0 | Build: d1bfa0a*
+*Last Updated: October 2025 | Version: 2.0.0*
