@@ -1,10 +1,10 @@
-# 🤖 BomBot - Self-Hosted AI SBOM Security Analysis Platform
+# BomBot - Self-Hosted AI SBOM Security Analysis Platform
 
 > **Next-Generation Security Analysis**  
 > A hybrid-architecture full-stack security platform with **self-hosted Llama 3.2 1B AI** that provides instant vulnerability analysis, intelligent function calling, and comprehensive SBOM security assessment with complete data privacy.
 
 
-## 🏗️ System Architecture
+## System Architecture
 
 BomBot implements a **self-hosted AI architecture** with direct chat completions and intelligent function calling for comprehensive security analysis:
 
@@ -12,14 +12,14 @@ BomBot implements a **self-hosted AI architecture** with direct chat completions
 ┌─────────────────────────────────────────────────────────────┐
 │                 BomBot Self-Hosted Platform                 │
 ├─────────────────────────────────────────────────────────────┤
-│  🎨 React UI (Vite)              🔧 Next.js API Routes     │
+│  React UI (Vite)              Next.js API Routes     │
 │  ├── ChatInterface.tsx           ├── /api/chat             │
 │  ├── Direct AI Chat              ├── /api/upload           │
 │  ├── ChatMessage.tsx             ├── /api/osv-query        │
 │  ├── VulnerabilityCards          └── /api/run-status       │
 │  └── Conversation History                                  │
 ├─────────────────────────────────────────────────────────────┤
-│  🧠 AI Client Engine (src/lib/ai-client.ts)               │
+│  AI Client Engine (src/lib/ai-client.ts)               │
 │  ├── Function Call Detection     ├── Conversation Context  │
 │  ├── Hybrid Provider Support     ├── Direct Responses     │
 │  └── Manual Function Execution   └── Error Recovery       │
@@ -28,51 +28,51 @@ BomBot implements a **self-hosted AI architecture** with direct chat completions
     ┌─────────────▼─────────────────────────────────────┐
     │          AI & Data Integrations                   │
     ├───────────────────────────────────────────────────┤
-    │  🚀 Jetstream (Self-Hosted)   📊 OSV.dev API      │
+    │  Jetstream (Self-Hosted)   OSV.dev API      │
     │  ├── Llama 3.2-1B-Instruct    ├── Package Queries │
     │  ├── Direct Chat Completions  ├── CVE Lookups     │
     │  ├── Complete Data Privacy    └── Real-time Data  │
     │  └── Custom Prompting                             │
     │                                                   │
-    │  🔄 OpenAI Fallback (Optional)                    │
+    │  OpenAI Fallback (Optional)                    │
     │  └── GPT-4 Compatibility                          │
     └───────────────────────────────────────────────────┘
 ```
 
-## ✨ Advanced Features
+## Advanced Features
 
-### 🚀 **Self-Hosted AI Architecture**
+### **Self-Hosted AI Architecture**
 - **Direct Chat Completions**: Instant responses from your own Llama 3.2 model
 - **Complete Data Privacy**: All AI processing stays on your infrastructure
 - **Intelligent Function Calling**: Automatic package/CVE query detection and execution
 - **Conversation Context**: Maintains chat history for better AI responses
 - **Hybrid Provider Support**: Jetstream primary, OpenAI fallback capability
 
-### 🎯 **Intelligent Package Analysis**
+### **Intelligent Package Analysis**
 - **Multi-Ecosystem Support**: npm, PyPI, Maven, Go, NuGet, RubyGems, Cargo, Composer, Hex, SwiftPM
 - **Version-Specific Queries**: Precise vulnerability matching for specific package versions
 - **Severity Intelligence**: CVSS score parsing to clean severity levels (CRITICAL/HIGH/MEDIUM/LOW)
 - **CVE Cross-Reference**: Direct OSV.dev integration for authoritative vulnerability data
 
-### 🛡️ **SBOM Processing Engine**
+### **SBOM Processing Engine**
 - **Multi-Format Support**: SPDX, CycloneDX, Generic JSON schemas
 - **Batch Processing**: Concurrent vulnerability scanning with rate limiting
 - **Dependency Mapping**: Package ecosystem detection from PURL and metadata
 - **Scalable Architecture**: Handles up to 50 packages per SBOM (serverless optimization)
 
-### 💬 **Advanced Chat System**
+### **Advanced Chat System**
 - **Direct Responses**: Immediate AI responses without polling or threads
 - **Conversation History**: Smart context management for multi-turn conversations
 - **Markdown Rendering**: Rich formatted responses with proper spacing
 - **File Upload Integration**: Drag-and-drop SBOM processing with instant AI analysis
 
-### 🔍 **Smart Vulnerability Cards**
+### **Smart Vulnerability Cards**
 - **Interactive UI**: Clickable cards with direct OSV.dev links
 - **Severity Visualization**: Color-coded badges with appropriate icons
 - **Package Context**: Version-aware vulnerability attribution
 - **Export Ready**: Structured data for reporting and integration
 
-## 🛠️ Technical Implementation
+## Technical Implementation
 
 ### Frontend Architecture (React + TypeScript)
 
@@ -261,7 +261,7 @@ interface AIClientConfig {
 }
 ```
 
-## 🔧 Configuration & Deployment
+## Configuration & Deployment
 
 ### Environment Variables
 ```bash
@@ -321,7 +321,7 @@ Fallback Support:
   - Same function calling capabilities
 ```
 
-## 📊 Performance Metrics
+## Performance Metrics
 
 ### Bundle Analysis
 ```
@@ -361,7 +361,7 @@ Scalability Limits:
 └── Context Window: ~4,000 tokens (automatic management)
 ```
 
-## 🚀 Usage Patterns
+## Usage Patterns
 
 ### Enterprise SBOM Analysis
 ```typescript
@@ -385,7 +385,7 @@ Scalability Limits:
 6. Get technical implementation guidance
 ```
 
-## ⚠️ **Context Window Management**
+## **Context Window Management**
 
 Your self-hosted **Llama 3.2-1B-Instruct** model has a context window limit (~4,000 tokens) that ensures optimal performance but requires conversation management for extended sessions.
 
@@ -405,13 +405,13 @@ Typical Limits:
 └── File upload conversations: ~10-20 exchanges before limit
 ```
 
-### **🤖 Automatic Context Management**
+### **Automatic Context Management**
 
 BomBot **automatically detects** when approaching context limits and provides user-friendly guidance:
 
 **For Chat Messages:**
 ```
-🤖 Context Limit Reached
+Context Limit Reached
 
 I've reached my conversation memory limit! Our chat has gotten quite long 
 and I need to start fresh to continue helping you effectively.
@@ -421,12 +421,12 @@ What to do next:
 - I'll be ready to help with your security analysis questions
 - You can re-upload any SBOM files if needed
 
-Don't worry - starting fresh won't affect my ability to help you! 🚀
+Don't worry - starting fresh won't affect my ability to help you!
 ```
 
 **For SBOM Uploads:**
 ```
-🤖 SBOM Analysis Complete - Context Limit Reached
+SBOM Analysis Complete - Context Limit Reached
 
 I've successfully scanned your SBOM file and found vulnerabilities, 
 but our conversation has gotten quite long.
@@ -434,19 +434,19 @@ but our conversation has gotten quite long.
 Please start a new chat and re-upload this SBOM file for comprehensive 
 AI-powered security insights.
 
-Current scan results are ready - you can still see the vulnerability data! 🚀
+Current scan results are ready - you can still see the vulnerability data!
 ```
 
-### **🎯 Smart User Experience**
+### **Smart User Experience**
 
 When context limits are reached:
-✅ **Friendly messaging**: No technical errors, clear guidance  
-✅ **Visual hints**: "✚ New Chat" button pulses and auto-scrolls into view  
-✅ **Data preservation**: SBOM scan results remain visible  
-✅ **Instant recovery**: One click to start fresh conversation  
-✅ **Full functionality**: All features work immediately in new chat  
+**Friendly messaging**: No technical errors, clear guidance  
+**Visual hints**: "✚ New Chat" button pulses and auto-scrolls into view  
+**Data preservation**: SBOM scan results remain visible  
+**Instant recovery**: One click to start fresh conversation  
+**Full functionality**: All features work immediately in new chat  
 
-### **💡 Best Practices for Long Sessions**
+### **Best Practices for Long Sessions**
 
 ```typescript
 Conversation Management Tips:
@@ -462,7 +462,7 @@ Optimal Workflow:
 4. Repeat for additional files or in-depth analysis
 ```
 
-### **🔧 Technical Implementation**
+### **Technical Implementation**
 
 ```typescript
 // Context limit detection and handling
@@ -480,14 +480,14 @@ Console Output:
 └── UI hint activation status
 ```
 
-### **🚀 Why This Approach Works**
+### **Why This Approach Works**
 
 **Advantages over complex context management:**
-- ✅ **Reliable**: No risk of losing important context through truncation
-- ✅ **Predictable**: Users always know when they need to restart  
-- ✅ **Simple**: One-click recovery without confusion
-- ✅ **Effective**: Fresh context often provides better analysis
-- ✅ **Transparent**: Clear communication about limitations
+- **Reliable**: No risk of losing important context through truncation
+- **Predictable**: Users always know when they need to restart  
+- **Simple**: One-click recovery without confusion
+- **Effective**: Fresh context often provides better analysis
+- **Transparent**: Clear communication about limitations
 
 **Perfect for security workflows:**
 - Each SBOM analysis gets full AI attention
@@ -495,7 +495,7 @@ Console Output:
 - Clear separation between different security assessments
 - Optimal performance maintained throughout session
 
-## 🔄 Development Workflow
+## Development Workflow
 
 ### Local Development Setup
 ```bash
@@ -535,7 +535,7 @@ npm run type-check   # TypeScript validation
 npm run lint         # Code quality checks
 ```
 
-## 🔐 Security Features
+## Security Features
 
 ### Data Handling
 ```typescript
@@ -563,9 +563,9 @@ Security Measures:
     └── XSS protection via React's built-in escaping
 ```
 
-## 📈 Key Features Summary
+## Key Features Summary
 
-### ✅ **Current Capabilities**
+### **Current Capabilities**
 - **Hybrid Response System**: Instant templated responses + AI deep analysis
 - **Multi-Format SBOM Support**: SPDX, CycloneDX, Generic JSON
 - **11 Package Ecosystems**: npm, PyPI, Maven, Go, NuGet, RubyGems, etc.
@@ -577,7 +577,7 @@ Security Measures:
 - **Drag-and-Drop File Upload**: 10MB limit with progress tracking
 - **Silent Polling**: No timeout interruptions for better UX
 
-### 🔧 **Technical Stack**
+### **Technical Stack**
 - **Frontend**: React 18 + TypeScript + Vite + TailwindCSS + Radix UI
 - **Backend**: Next.js 14 + TypeScript + OpenAI API + OSV.dev API
 - **Deployment**: Vercel Serverless with optimized build pipeline
@@ -587,7 +587,7 @@ Security Measures:
 
 ---
 
-## 🏁 Quick Start
+## Quick Start
 
 1. **Deploy**: Use Vercel or similar platform for deployment
 2. **Configure**: Add `OPENAI_API_KEY` and `ASSISTANT_ID` to Vercel environment
@@ -595,7 +595,7 @@ Security Measures:
 
 ---
 
-## 📄 License
+## License
 
 This project is licensed under the **Mozilla Public License 2.0** - see the [LICENSE](LICENSE) file for details.
 
